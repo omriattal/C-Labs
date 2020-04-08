@@ -1,0 +1,3 @@
+/home/omriattal/Documents/LABS/lab1/task1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/omriattal/Documents/LABS/lab1/task1/cmake-build-debug/CMakeFiles/task1.dir
+/home/omriattal/Documents/LABS/lab1/task1/cmake-build-debug/CMakeFiles/edit_cache.dir
