@@ -6,11 +6,13 @@
 #define VIRUS_NAME_LENGTH 16
 #define ZERO_PADDING_NUMBER_HEX 256
 #define INPUT_MAX_SIZE 50
+#define MAX_BUFFER_SIZE 10000
 
+char* fileName = "\0";
 typedef struct virus
 {
     unsigned short SigSize;
-    char virusName[16];
+    char virusName[VIRUS_NAME_LENGTH];
     char *sig;
 } virus;
 
@@ -39,11 +41,22 @@ link *quit(link *list);
 void printHex(FILE *file, char *buffer, int length);
 virus *readVirus(FILE *file);
 void printVirus(virus *virus, FILE *output);
+void detect_virus(char *buffer, unsigned int size, link *virus_list);
+link* detect_virus_wrapper(link *list);
 
 void destroyVirus(virus *virus)
 {
     free(virus->sig);
     free(virus);
+}
+
+link *destroyLink(link *list)
+{
+    destroyVirus(list->vir);
+    link *tmp = list;
+    list = list->nextVirus;
+    free(tmp);
+    return list;
 }
 
 link *createLink(link *nextlink, virus *data)
@@ -88,7 +101,7 @@ link *printSignatures(link *list)
 
 link *quit(link *list)
 {
-    list_free(list); 
+    list_free(list);
     exit(0);
 }
 
@@ -129,19 +142,63 @@ void printVirus(virus *virus, FILE *output)
 link *loadSignatures(link *list)
 {
     char input[INPUT_MAX_SIZE];
-    scanf("enter file name: %s\n",input); fgetc(stdin);
+    scanf("%s", input);
+    printf("%s", "\n");
+    fgetc(stdin);
     FILE *file = fopen(input, "r");
     while (!feof(file))
     {
         list = list_append(list, readVirus(file));
     }
+
+    list = destroyLink(list);
+    fclose(file);
+    return list;
+}
+void detect_virus(char *buffer, unsigned int size, link *virus_list)
+{
+    link* list = virus_list;
+    while (list != NULL)
+    {
+        int signatureSize = list->vir->SigSize;
+        char* signature = list->vir->sig;
+        for (int i = 0; i <= size-signatureSize; i++) {
+            if(memcmp((buffer+i),signature,signatureSize)==0) {
+                printf("The starting byte location is %d \n",i);
+                printf("The virus name:%s \n ",list->vir->virusName);
+                printf("The size of the virus signature: %d \n",signatureSize);
+            }
+        }
+        list = list->nextVirus;
+    }
+
+
+}
+link* detect_virus_wrapper(link* list) {
+    char buffer[MAX_BUFFER_SIZE] ="\0";
+    unsigned int size = 0;
+    FILE *fileToCheck = fopen(fileName, "r");
+    fseek(fileToCheck, 0, SEEK_END);
+    size = ftell(fileToCheck);
+    fseek(fileToCheck, 0, SEEK_SET);
+    if (size > MAX_BUFFER_SIZE)
+    {
+        size = MAX_BUFFER_SIZE;
+    }
+    fread(buffer, 1, size, fileToCheck);
+    detect_virus(buffer,size,list);
     return list;
 }
 
 int main(int argc, char *argv[])
 {
+    fileName = argv[1];
+
     MENU menu[] = {
-        {"Load Signatures", &loadSignatures}, {"Print Signatures", &printSignatures}, {"quit", &quit}, {NULL, NULL}};
+        {"Load Signatures", loadSignatures},
+         {"Print Signatures", printSignatures},
+         {"Detect Virus", detect_virus_wrapper},
+          {"quit", quit}, {NULL, NULL}};
     int input = 0;
     link *list = NULL;
 
@@ -153,12 +210,14 @@ int main(int argc, char *argv[])
             printf("%d) %s \n", i, menu[i].name);
         }
         printf("Option: ");
-        input = fgetc(stdin) - '0';
-        if (0 <= input && input <= 2)
+    
+        input = fgetc(stdin) - '0'; fgetc(stdin);
+        if (0 <= input && input <= 3)
         {
+            printf("the input is %d\n",input);
             list = menu[input].func(list);
         }
+       
     }
-
-    return 0;
 }
+#pragma clang diagnostic pop
