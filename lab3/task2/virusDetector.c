@@ -79,7 +79,6 @@ void list_print(link *virus_list)
 link *list_append(link *virus_list, virus *data)
 {
     link *newlink = createLink(virus_list, data);
-    virus_list = newlink;
     return newlink;
 }
 
@@ -96,8 +95,7 @@ void list_free(link *virus_list)
 
 link *printSignatures(char *fileName, link *list)
 {
-    link* tmp = list;
-    list_print(tmp);
+    list_print(list);
     return list;
 }
 
@@ -117,17 +115,12 @@ void printHex(FILE *file, char *buffer, int length)
 virus *readVirus(FILE *file)
 {
     virus *nextVirus = (virus *)malloc(sizeof(virus));
-    char N[2];
+    char N[2] = "\0";
     fread(N, 1, 2, file);
     int n = N[1] * ZERO_PADDING_NUMBER_HEX + N[0];
-
-    char name[VIRUS_NAME_LENGTH];
-    fread(name, 1, VIRUS_NAME_LENGTH, file);
-
+    fread(nextVirus->virusName, 1, VIRUS_NAME_LENGTH, file);
     char *sig = (char *)malloc(sizeof(char) * n);
     fread(sig, 1, n, file);
-
-    strncpy(nextVirus->virusName, name, VIRUS_NAME_LENGTH);
     nextVirus->SigSize = n;
     nextVirus->sig = sig;
 
