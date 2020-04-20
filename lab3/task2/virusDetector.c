@@ -118,7 +118,8 @@ virus *readVirus(FILE *file)
     char N[2] = "\0";
     fread(N, 1, 2, file);
     int n = N[1] * ZERO_PADDING_NUMBER_HEX + N[0];
-    fread(nextVirus->virusName, 1, VIRUS_NAME_LENGTH, file);
+    char name[VIRUS_NAME_LENGTH];
+    fread(name, 1, VIRUS_NAME_LENGTH, file);
     char *sig = (char *)malloc(sizeof(char) * n);
     fread(sig, 1, n, file);
     nextVirus->SigSize = n;

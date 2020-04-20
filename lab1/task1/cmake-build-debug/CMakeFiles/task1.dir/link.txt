@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/task1.dir/encoder.c.o  -o task1 
