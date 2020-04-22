@@ -30,10 +30,12 @@ int main (int argc , char* argv[], char* envp[]) {
     int shira_location = 657;
    
     file_descriptor = system_call(SYS_OPEN,file_name,O_RDRW);
-    system_call(SYS_LSEEK,file_descriptor,shira_location,SEEK_SET);
-    system_call(SYS_WRITE,file_descriptor,x_name,strlen(x_name));
-    system_call(SYS_WRITE,file_descriptor,"\0",1);
-    system_call(SYS_CLOSE,file_descriptor);
+    quit_or_proceed(file_descriptor);
+    quit_or_proceed(system_call(SYS_LSEEK,file_descriptor,shira_location,SEEK_SET) - 1);
+    quit_or_proceed(system_call(SYS_WRITE,file_descriptor,x_name,strlen(x_name)));
+    quit_or_proceed(system_call(SYS_WRITE,file_descriptor,"\0",1));
+    quit_or_proceed(system_call(SYS_CLOSE,file_descriptor));
+    
     return 0;    
 
     
