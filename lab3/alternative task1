@@ -50,13 +50,24 @@ void destroyVirus(virus *virus)
     free(virus);
 }
 
-link *destroyLink(link *list)
+link* destroyLink(link *list)
 {
+    link* first = list;
+    link* tmp = list;
+    while(list->nextVirus != NULL) {
+        tmp = list;
+        list = list->nextVirus;
+    }
     destroyVirus(list->vir);
-    link *tmp = list;
-    list = list->nextVirus;
-    free(tmp);
-    return list;
+    if (first == list) {
+        free(list);
+        first = NULL;
+    } else {
+        free(list);
+        tmp->nextVirus=NULL;
+    }
+    return first;
+
 }
 
 link *createLink(link *nextlink, virus *data)
@@ -77,19 +88,25 @@ void list_print(link *virus_list)
 }
 link *list_append(link *virus_list, virus *data)
 {
-    link *newlink = createLink(virus_list, data);
-    virus_list = newlink;
-    return newlink;
+    link* tmp = virus_list;
+    if(virus_list == NULL) {
+        virus_list = createLink(NULL,data);
+        return virus_list;
+    } else {
+        while(virus_list->nextVirus!=NULL) {
+            virus_list=virus_list->nextVirus;
+        }
+    }
+    link *newlink = createLink(NULL, data);
+    virus_list->nextVirus=newlink;
+    return tmp;
 }
 
 void list_free(link *virus_list)
 {
     while (virus_list != NULL)
     {
-        link *tmp = virus_list;
-        destroyVirus(virus_list->vir);
-        virus_list = virus_list->nextVirus;
-        free(tmp);
+        virus_list = destroyLink(virus_list);
     }
 }
 
@@ -151,7 +168,7 @@ link *loadSignatures(link *list)
         list = list_append(list, readVirus(file));
     }
 
-    list = destroyLink(list);
+    destroyLink(list);
     fclose(file);
     return list;
 }

@@ -7,7 +7,7 @@
 #define ZERO_PADDING_NUMBER_HEX 256
 #define INPUT_MAX_SIZE 50
 #define MAX_BUFFER_SIZE 10000
-#define NOP 0x90
+
 
 typedef struct virus
 {
@@ -61,10 +61,6 @@ void detect_virus(char *buffer, unsigned int size, link *virus_list);
 
 link *quit(char* fileName, link *list);
 
-void kill_virus(char *fileName, int sigOffset, int sigSize);
-
-link *kill_virus_wrapper(char *fileName, link *link);
-
 
 //MENU FUNCTIONS
 
@@ -90,20 +86,6 @@ link *detect_virus_wrapper(char *fileName, link *list)
     fread(buffer, 1, size, suspected);
     detect_virus(buffer, size, list);
     fclose(suspected);
-    return list;
-}
-
-link *kill_virus_wrapper(char *fileName, link* list) {
-    printf("Enter the starting byte location: ");
-    char inputStr[MAX_BUFFER_SIZE];
-    unsigned int location = 0;
-    fgets(inputStr,MAX_BUFFER_SIZE,stdin);
-    sscanf(inputStr,"%d",&location);
-    printf("Enter the size of he virus: ");
-    fgets(inputStr,MAX_BUFFER_SIZE,stdin);
-    unsigned int size = 0;
-    sscanf(inputStr,"%d",&size);
-    kill_virus(fileName,location,size);
     return list;
 }
 //LINK FUNCTIONS
@@ -189,7 +171,7 @@ void detect_virus(char *buffer, unsigned int size, link *virus_list)
         for (int i = 0; i <= limit; i++)
         { if (memcmp((buffer + i), signature, signatureSize) == 0)
             {
-                printf("\n----------- VIRUS DETECTED ------------\n");
+                printf("\n---------- VIRUS DETECTED -----------n");
                 printf("The starting byte location is %d \n", i);
                 printf("The virus name:%s \n", list->vir->virusName);
                 printf("The size of the virus signature: %d", signatureSize);
@@ -207,17 +189,6 @@ void printHex(FILE *file, char *buffer, int length)
     {
         printf("%02X \t", buffer[i] & 0x0ff);
     }
-}
-
-void kill_virus(char *fileName, int sigOffset, int sigSize) {
-    FILE *suspected = fopen(fileName,"r+");
-    fseek(suspected,sigOffset,SEEK_SET);
-    char nop_arr[sigSize];
-    for(int i = 0 ; i <sigSize ; i++) {
-        nop_arr[i] = NOP;
-    }
-    fwrite(nop_arr,1,sigSize,suspected);
-    fclose(suspected);
 }
 
 void destroyVirus(virus *virus)
@@ -253,18 +224,15 @@ void printVirus(virus *virus, FILE *output)
 int main(int argc, char *argv[])
 {
     char *fileName = argv[1];
-    int upperBound = -1;
-    int input = 0;
     char inputBuffer[INPUT_MAX_SIZE];
     MENU menu[] = {
         {"Load Signatures", &loadSignatures},
         {"Print Signatures", &printSignatures},
         {"Detect Virus", &detect_virus_wrapper},
-        {"Kill Virus",&kill_virus_wrapper},
         {"quit", &quit},
         {NULL, NULL}};
-    for (int i = 0 ; menu[i].name!=NULL; i++) {upperBound++;}    
-   
+    int upperBound = 3;     
+    int input = 0;
     link *list = NULL;
      while (true)
     {
@@ -278,7 +246,7 @@ int main(int argc, char *argv[])
         sscanf(inputBuffer, "%d", &input);
         if (0 <= input && input <= upperBound)
         {
-            list = (*menu[input].func)(fileName, list);
+            list = menu[input].func(fileName, list);
         }
     }
 }
