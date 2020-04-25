@@ -65,7 +65,7 @@ int main(int argc, char *argv[], char *envp[])
         id_sys_call = itoa(SYS_READ);
         if(debugMode) {
             system_call(SYS_WRITE,STDERR,"",1);
-            system_call(SYS_WRITE,STDERR,return_from_sys_call,strlen(return_from_sys_call));;
+            system_call(SYS_WRITE,STDERR,return_from_sys_call,strlen(return_from_sys_call));
             system_call(SYS_WRITE,STDERR,"\t",1);
             system_call(SYS_WRITE,STDERR,id_sys_call,strlen(id_sys_call));
             system_call(SYS_WRITE,STDERR,"\n",1);
