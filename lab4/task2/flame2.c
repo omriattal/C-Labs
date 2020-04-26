@@ -15,11 +15,22 @@
 #define SYS_EXIT 1
 #define SUCSSEFUL_EXIT_CODE 0
 #define UNSUCSSEFUL_EXIT_CODE 0x55
+#define FILE_PERMISSION 0777
 #define STDIN 0
 #define STDERR 2
 #define WRONLY 1
 #define MAX_BYTES_IN_DIRECTORY 8192
-#define ENT_OFFSET 28
+
+
+#define DT_UNKNOWN 0
+#define DT_FIFO 1
+#define DT_CHR 2
+#define DT_DIR 4
+#define DT_BLK 7
+#define DT_REG 8
+#define DT_LNK 10
+#define DT_SOCK 12
+#define DT_WHT 14
 
 typedef struct ent
 {
@@ -90,12 +101,46 @@ void print_ent(ent *ent_ptr, bool debug_mode)
     call2(SYS_WRITE, STDOUT, size_str, strlen(size_str), debug_mode, "Writing to stdout error");
     call2(SYS_WRITE, STDOUT, " name is: ", 10, debug_mode, "Writing to stdout error");
     call2(SYS_WRITE, STDOUT, name, strlen(name), debug_mode, "Writing to stdout error");
+
+}
+
+void print_ent_type (int type_num,bool debug_mode) {
+    call2(SYS_WRITE, STDOUT, " type is: ", 10, debug_mode, "Writing to stdout error");
+    switch (type_num)
+    {
+    case DT_FIFO:
+        call2(SYS_WRITE, STDOUT, "fifo", 4 , debug_mode, "Writing to stdout error");
+        break;
+    case DT_BLK:
+        call2(SYS_WRITE, STDOUT, "blk",3, debug_mode, "Writing to stdout error");
+        break;
+    case DT_CHR:
+        call2(SYS_WRITE, STDOUT, "chr",3, debug_mode, "Writing to stdout error");
+        break;
+    case DT_DIR:
+        call2(SYS_WRITE, STDOUT, "dir",3, debug_mode, "Writing to stdout error");
+        break;
+    case DT_LNK:
+        call2(SYS_WRITE, STDOUT, "lnk", 3, debug_mode, "Writing to stdout error");
+        break;
+    case DT_REG:
+        call2(SYS_WRITE, STDOUT, "reg", 3, debug_mode, "Writing to stdout error");
+        break;
+    case DT_SOCK:
+        call2(SYS_WRITE, STDOUT, "sock", 4 , debug_mode, "Writing to stdout error");
+        break;
+    default:
+        call2(SYS_WRITE, STDOUT, "unknown", 7, debug_mode, "Writing to stdout error");
+        break;
+    }
     call2(SYS_WRITE, STDOUT, "\n", 1, debug_mode, "Writing to stdout error");
 }
 
 int main(int argc, char *argv[], char *envp[])
 {
+    system_call(SYS_WRITE,STDOUT,"Flame2 - This Time it's Personal\n",33);
     bool debug_mode = false;
+    char* prefix="";
     int i;
     for (i = 0; i < argc; i++)
     {
@@ -103,19 +148,25 @@ int main(int argc, char *argv[], char *envp[])
         {
             debug_mode = true;
         }
+        if(strncmp(argv[i],"-p",2) == 0 ) {
+            prefix = argv[i]+PROGRAM_ARG_OFFSET;
+        }
     }
     char buffer[MAX_BYTES_IN_DIRECTORY];
     ent *ent_ptr;
-    int wd_file_descriptor = call1(SYS_OPEN, ".", O_RDONLY, 0777, debug_mode, "Open Current Directory Error");
+    int wd_file_descriptor = call1(SYS_OPEN, ".", O_RDONLY, FILE_PERMISSION, debug_mode, "Open Current Directory Error");
     ent_ptr = buffer;
     int amount_of_bytes_read = call2(SYS_GETDENTS, wd_file_descriptor, buffer, MAX_BYTES_IN_DIRECTORY, debug_mode, "Get Dents Error");
     int counter = 0;
+    int type_of_file;
+    for(i = 0 ; i < amount_of_bytes_read; i+=ent_ptr->len) {
+        type_of_file = (int)(*(buffer+i+ent_ptr->len -1));
+        ent_ptr = buffer+i;  
+        if(strncmp(ent_ptr->buf,prefix,strlen(prefix)) == 0) {
+            print_ent(ent_ptr, debug_mode);
+            print_ent_type(type_of_file,debug_mode);
+        }
 
-    while (ent_ptr->len != 0)
-    {
-        print_ent(ent_ptr, debug_mode);
-        counter += ent_ptr->len;
-        ent_ptr = buffer + counter;
     }
 
     return 0;
