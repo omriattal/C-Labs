@@ -1,6 +1,14 @@
+section .data
+hello_infected: db "Hello, Infected file!",10,0
+
 section .text
 global _start
 global system_call
+global infector
+global infection
+global code_start
+global code_end
+
 extern main
 _start:
     pop    dword ecx    ; ecx = argc
@@ -38,3 +46,49 @@ system_call:
     add     esp, 4          ; Restore caller state
     pop     ebp             ; Restore caller state
     ret                     ; Back to caller
+
+code_start:
+    infection:
+        push ebp       
+        mov ebp,esp
+        pushad
+        pushfd
+        mov eax,4 ;sys_write
+        mov ebx, 1 ;stdout
+        mov ecx, hello_infected ; insert location in memory
+        mov edx, 23 ; length of the string
+        int 0x80
+        popfd
+        popad
+        pop ebp
+        ret
+    infector:
+        push ebp
+        mov ebp,esp
+        sub esp,4
+        pushad
+        pushfd
+        mov eax, 5 ;sys_open
+        mov ebx, [ebp+8] ; file_name
+        mov ecx, 1025 ; append
+        mov edx, 511
+        int 0x80
+        mov [ebp -4], eax ; save file descriptor
+        mov eax,4 ;sys_write
+        mov ebx, [ebp-4] ; file descriptor
+        mov ecx, 0x40
+        mov edx, 98
+        int 0x80
+        mov eax, 6
+        mov ebx, [ebp-4]
+        int 0x80
+        popfd
+        popad
+        add esp, 4
+        pop ebp
+        ret
+code_end:
+
+
+
+

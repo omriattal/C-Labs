@@ -11,6 +11,7 @@ util.o: util.c
 
 start.o: start.s
 	nasm -f elf start.s -o start.o
+	nasm -f elf start.s -l sample.lst
 
 .PHONY: clean
 
