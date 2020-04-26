@@ -155,13 +155,13 @@ int main(int argc, char *argv[], char *envp[])
     char buffer[MAX_BYTES_IN_DIRECTORY];
     ent *ent_ptr;
     int wd_file_descriptor = call1(SYS_OPEN, ".", O_RDONLY, FILE_PERMISSION, debug_mode, "Open Current Directory Error");
-    ent_ptr = buffer;
+    ent_ptr = (ent*) buffer;
     int amount_of_bytes_read = call2(SYS_GETDENTS, wd_file_descriptor, buffer, MAX_BYTES_IN_DIRECTORY, debug_mode, "Get Dents Error");
-    int counter = 0;
+    int counter_bytes;
     int type_of_file;
-    for(i = 0 ; i < amount_of_bytes_read; i+=ent_ptr->len) {
-        type_of_file = (int)(*(buffer+i+ent_ptr->len -1));
-        ent_ptr = buffer+i;  
+    for(counter_bytes = 0 ; counter_bytes < amount_of_bytes_read; counter_bytes+=ent_ptr->len) {
+        type_of_file = (int)(*(buffer+counter_bytes+ent_ptr->len -1));
+        ent_ptr = (ent*) (buffer+counter_bytes);  
         if(strncmp(ent_ptr->buf,prefix,strlen(prefix)) == 0) {
             print_ent(ent_ptr, debug_mode);
             print_ent_type(type_of_file,debug_mode);
