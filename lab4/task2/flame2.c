@@ -168,7 +168,7 @@ int main(int argc, char *argv[], char *envp[])
         {
             prefix = argv[i] + PROGRAM_ARG_OFFSET;
         }
-        else if (strncmp(argv[i], "-e", 2) == 0)
+        else if (strncmp(argv[i], "-a", 2) == 0)
         {
             prefix = argv[i] + PROGRAM_ARG_OFFSET;
             apply_mode = true;
@@ -184,6 +184,7 @@ int main(int argc, char *argv[], char *envp[])
     if(apply_mode) {
         print_code_start_end(debug_mode);
     }
+
     for (i = 0; i < amount_of_bytes_read; i += ent_ptr->len)
     {
         ent_ptr = (ent *)(buffer + i);

