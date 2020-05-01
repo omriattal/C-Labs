@@ -1,7 +1,6 @@
 # C-Labs
 This repository includes all the systems programing Labs assignments, in Ben Gurion University, Israel.
-
-*The course is part of Computer Science mandatory courses in 
+The course is part of Computer Science mandatory courses in 
 ### LAB1 - Rudimentary C programming, make files
 https://www.cs.bgu.ac.il/~caspl202/Lab1/Tasks
 ### LAB2 - C programming - pointers, function pointers and simple data structures
