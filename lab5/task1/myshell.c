@@ -6,10 +6,16 @@
 #include <stdlib.h>
 #include "LineParser.h"
 #include <string.h>
+#include <sys/wait.h>
+
 #define MAX_USER_LINE 2048
 
-void execute(cmdLine *cmd_line_ptr)
+void execute(cmdLine *cmd_line_ptr, bool debug_mode)
 {
+    if (debug_mode)
+    {
+        fprintf(stderr, "%s", "child executing command! \n");
+    }
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
     perror("There was an error executing \n");
     free(cmd_line_ptr);
@@ -18,6 +24,14 @@ void execute(cmdLine *cmd_line_ptr)
 
 int main(int argc, char *argv[])
 {
+    bool debug_mode = false;
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-d") == 0)
+        {
+            debug_mode = true;
+        }
+    }
     char buffer[PATH_MAX];
     char userLine[MAX_USER_LINE];
     cmdLine *cmd_line;
@@ -25,7 +39,7 @@ int main(int argc, char *argv[])
     while (true)
     {
         getcwd(buffer, PATH_MAX);
-        printf("The current working direcrtory : %s \n", buffer);
+        printf("%s \n", buffer);
         fgets(userLine, MAX_USER_LINE, stdin);
         if (strncmp(userLine, "quit", 4) == 0)
         {
@@ -33,10 +47,16 @@ int main(int argc, char *argv[])
             break;
         }
         cmd_line = parseCmdLines(userLine);
-        if (fork() == 0)
+
+        if (!(pid = fork()))
         {
-            execute(cmd_line);
+            execute(cmd_line, debug_mode);
         }
+        if (debug_mode)
+        {
+            fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
+        }
+        waitpid(pid, NULL, 0);
     }
     return 0;
 }
