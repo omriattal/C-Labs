@@ -234,9 +234,7 @@ virus *readVirus(FILE *file)
     unsigned short n = *(unsigned short *) nInputRaw;
     char *sig = (char *)malloc(sizeof(char) * n);
     fread(nextVirus->virusName, 1, VIRUS_NAME_LENGTH, file);
-
     fread(sig, 1, n, file);
-
     nextVirus->SigSize = n;
     nextVirus->sig = sig;
 

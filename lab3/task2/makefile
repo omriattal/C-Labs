@@ -1,12 +1,12 @@
-all: virusDetector
+all: task2b
 
-virusDetector: virusDetector.o
-	gcc -g -Wall -o virusDetector virusDetector.o 
+task2b: task2b.o
+	gcc -g -Wall -o task2b task2b.o 
 
-virusDetector.o: virusDetector.c
-	gcc -g -Wall -c -o virusDetector.o virusDetector.c 
+task2b.o: task2b.c
+	gcc -g -Wall -c -o task2b.o task2b.c 
 
 .PHONY: clean
 
 clean: 
-	rm -f *.o virusDetector
+	rm -f *.o task2b
