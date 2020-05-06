@@ -77,7 +77,7 @@ code_start:
         mov eax,4 ;sys_write
         mov ebx, [ebp-4] ; file descriptor
         mov ecx, code_start
-        mov edx, 99
+        mov edx, code_end - code_start
         int 0x80
         mov eax, 6
         mov ebx, [ebp-4]
