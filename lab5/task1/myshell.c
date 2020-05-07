@@ -10,6 +10,27 @@
 
 #define MAX_USER_LINE 2048
 
+void cd(cmdLine *cmd_line_ptr)
+{
+    if (cmd_line_ptr->arguments[1] != NULL)
+    {
+        if (chdir(cmd_line_ptr->arguments[1]) != 0)
+        {
+            perror("can not change directory \n");
+        }
+    }
+    else if (chdir("..") != 0)
+    {
+        perror("can not change directory \n");
+    }
+}
+void wait_pid(int pid, int blocking)
+{
+    if (blocking)
+    {
+        waitpid(pid, NULL, 0);
+    }
+}
 void execute(cmdLine *cmd_line_ptr, bool debug_mode)
 {
     if (debug_mode)
@@ -50,25 +71,18 @@ int main(int argc, char *argv[])
         cmd_line = parseCmdLines(userLine);
         if (strcmp(cmd_line->arguments[0], "cd") == 0)
         {
-            if(cmd_line->arguments[1] != NULL) {
-                if(chdir(cmd_line->arguments[1])!=0) {
-                     perror("can not change directory \n");
-                };
-            }
-            else if(chdir("..")!=0) {
-                perror("can not change directory \n");
-            }
-        } else if (!(pid = fork()))
+            cd(cmd_line);
+        }
+        else if (!(pid = fork()))
         {
             execute(cmd_line, debug_mode);
         }
-        
+
         if (debug_mode)
         {
             fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
         }
-        
-        waitpid(pid, NULL, 0);
+        wait_pid(pid,cmd_line->blocking);
     }
     return 0;
 }
