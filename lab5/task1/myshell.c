@@ -16,6 +16,7 @@ void execute(cmdLine *cmd_line_ptr, bool debug_mode)
     {
         fprintf(stderr, "%s", "child executing command! \n");
     }
+
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
     perror("There was an error executing \n");
     free(cmd_line_ptr);
@@ -47,15 +48,26 @@ int main(int argc, char *argv[])
             break;
         }
         cmd_line = parseCmdLines(userLine);
-
-        if (!(pid = fork()))
+        if (strcmp(cmd_line->arguments[0], "cd") == 0)
+        {
+            if(cmd_line->arguments[1] != NULL) {
+                if(chdir(cmd_line->arguments[1])!=0) {
+                     perror("can not change directory \n");
+                };
+            }
+            else if(chdir("..")!=0) {
+                perror("can not change directory \n");
+            }
+        } else if (!(pid = fork()))
         {
             execute(cmd_line, debug_mode);
         }
+        
         if (debug_mode)
         {
             fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
         }
+        
         waitpid(pid, NULL, 0);
     }
     return 0;
