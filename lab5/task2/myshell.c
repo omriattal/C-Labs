@@ -22,8 +22,11 @@ typedef struct process
 } process;
 
 void destroy_all_processes(process **processes);
-void destroy_processes(process *proc);
+void destroy_single_process(process *proc);
 process *makeProcess(cmdLine *cmd_line, pid_t pid, int status, process *next_proc);
+void freeProcessList(process *process_list);
+void updateProcessList(process **process_list);
+void updateProcessStatus(process *process_list, int pid, int status);
 
 process *makeProcess(cmdLine *cmd_line, pid_t pid, int status, process *next_proc)
 {
@@ -35,24 +38,30 @@ process *makeProcess(cmdLine *cmd_line, pid_t pid, int status, process *next_pro
     return proc;
 }
 
-void destroy_processes(process *proc)
+void destroy_single_process(process *proc)
 {
-    while (proc != NULL)
+    freeCmdLines(proc->cmd);
+    free(proc);
+}
+void freeProcessList(process *process_list)
+{
+    while (process_list != NULL)
     {
-        process *tmp = proc;
+        process *tmp = process_list;
         freeCmdLines(tmp->cmd);
-        proc = proc->next;
+        process_list = process_list->next;
         free(tmp);
     }
 }
 
 void destroy_all_processes(process **processes)
 {
-    destroy_processes(*processes);
+    freeProcessList(*processes);
     free(processes);
 }
 
 void addProcess(process **process_list, cmdLine *cmd, pid_t pid)
+
 {
     if (*process_list == NULL)
     {
@@ -65,14 +74,16 @@ void addProcess(process **process_list, cmdLine *cmd, pid_t pid)
 }
 void printProcessList(process **process_list)
 {
-    printf("%s", "----printing processes ----- \n");
+    printf("%s", "---------- PRINTING PROCESSES ---------- \n\n");
+    updateProcessList(process_list);
     int i = 0;
-    process *proc = *process_list;
-    while (proc != NULL)
+    process *curr = *process_list;
+    process *prev = NULL;
+    while (curr != NULL)
     {
-        printf("index : %d id: %d ", i, proc->pid);
+        printf("index : %d id: %d ", i, curr->pid);
         char *str_status;
-        switch (proc->status)
+        switch (curr->status)
         {
         case 1:
             str_status = "RUNNING";
@@ -80,19 +91,78 @@ void printProcessList(process **process_list)
         case 0:
             str_status = "SUSPENDED";
             break;
-        default:
+        default: //case -1
             str_status = "TERMINATED";
             break;
         }
+        
         printf("status: %s ", str_status);
-        printf("command : %s ", proc->cmd->arguments[0]);
-        for (int j = 0; proc->cmd->arguments[j] != NULL; j++)
+        printf("command : %s ", curr->cmd->arguments[0]);
+        for (int j = 0; curr->cmd->arguments[j] != NULL; j++)
         {
-            printf("arg %d : %s ", j, proc->cmd->arguments[j]);
+            printf("arg %d : %s ", j, curr->cmd->arguments[j]);
+        }
+
+        if (curr->status == TERMINATED)
+        {  
+            if (prev == NULL)
+            {
+                *process_list = curr->next;
+                destroy_single_process(curr);
+            }
+            else
+            {
+                prev->next = curr->next;
+                destroy_single_process(curr);
+            }
         }
         printf("\n");
         i++;
+        prev = curr;
+        curr = curr->next;
+    }
+
+}
+
+void updateProcessList(process **process_list)
+{
+    printf("%s", "----- UPDATING PROCESSES -----\n");
+    process *proc = *process_list;
+    int status;
+    while (proc != NULL)
+    {
+        if (waitpid(proc->pid, &status, WNOHANG) > 0)
+        {
+            if (WIFSTOPPED(status))
+            {
+                updateProcessStatus(proc, proc->pid, SUSPENDED);
+            }
+            else if (WIFCONTINUED(status))
+            {
+                updateProcessStatus(proc, proc->pid, RUNNING);
+            }
+            else if (WIFEXITED(status) || WIFSIGNALED(status))
+            {
+                updateProcessStatus(proc, proc->pid, TERMINATED);
+            }
+        }
+        else if (waitpid(proc->pid, &status, WNOHANG) == -1)
+        {
+            perror("update process list error \n");
+        }
+
         proc = proc->next;
+    }
+}
+void updateProcessStatus(process *process_list, int pid, int status)
+{
+    while (process_list != NULL)
+    {
+        if (process_list->pid == pid)
+        {
+            process_list->status = status;
+        }
+        process_list = process_list->next;
     }
 }
 
@@ -110,12 +180,9 @@ void cd(cmdLine *cmd_line_ptr)
         perror("can not change directory \n");
     }
 }
-void wait_pid(int pid, int blocking)
+void my_wait_pid(int pid, int blocking)
 {
-    if (blocking)
-    {
         waitpid(pid, NULL, 0);
-    }
 }
 void execute(cmdLine *cmd_line_ptr, bool debug_mode)
 {
@@ -166,13 +233,19 @@ int main(int argc, char *argv[])
         {
             execute(cmd_line, debug_mode);
         }
-        addProcess(processes, cmd_line, pid);
 
+        if (!(cmd_line->blocking))
+        {
+            addProcess(processes, cmd_line, pid);
+        }
+        else
+        {
+            my_wait_pid(pid, cmd_line->blocking);
+        }
         if (debug_mode)
         {
             fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
         }
-        wait_pid(pid, cmd_line->blocking);
     }
     destroy_all_processes(processes);
     return 0;
