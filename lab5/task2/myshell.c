@@ -128,6 +128,8 @@ void printProcessList(process **process_list)
         printf("\n");
         i++;
     }
+    printf("\n");
+    printf("----------------------------------------");
     printf("%s", "\n\n");
 }
 
@@ -137,7 +139,7 @@ void updateProcessList(process **process_list)
     int status;
     while (proc != NULL)
     {
-        if (waitpid(proc->pid, &status, WNOHANG) > 0)
+        if (waitpid(proc->pid, &status, WNOHANG | WUNTRACED | WCONTINUED) > 0)
         {
             if (WIFSTOPPED(status))
             {
