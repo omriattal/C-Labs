@@ -12,19 +12,18 @@
 void signal_handler(int sigNum) {
 	printf("%s signal was received \n",strsignal(sigNum));
 	signal(sigNum,SIG_DFL);
-	raise(SIGTSTP);
 	if(sigNum == SIGTSTP) {
 		signal(SIGCONT,signal_handler);
 	} else if(sigNum == SIGCONT) {
 		signal(SIGTSTP, signal_handler);
 	} 
-	
+	raise(sigNum);
 }
 
 int main(int argc, char **argv){ 
 	printf("Starting the program\n");
 	signal(SIGCONT,signal_handler);
-	signal(SIGSTOP,signal_handler);
+	signal(SIGTSTP,signal_handler);
 	signal(SIGINT,signal_handler);
 
 	while(1) {

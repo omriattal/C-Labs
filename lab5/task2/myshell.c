@@ -7,6 +7,7 @@
 #include "LineParser.h"
 #include <string.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define MAX_USER_LINE 2048
 #define TERMINATED -1
@@ -118,14 +119,16 @@ void printProcessList(process **process_list)
                 curr = curr->next;
                 destroy_single_process(tmp);
             }
-        } else {
+        }
+        else
+        {
             prev = curr;
             curr = curr->next;
         }
         printf("\n");
         i++;
     }
-    printf("%s","\n\n");
+    printf("%s", "\n\n");
 }
 
 void updateProcessList(process **process_list)
@@ -183,7 +186,7 @@ void cd(cmdLine *cmd_line_ptr)
         perror("can not change directory \n");
     }
 }
-void my_wait_pid(int pid, int blocking)
+void my_wait_pid(int pid)
 {
     waitpid(pid, NULL, 0);
 }
@@ -195,11 +198,13 @@ void execute(cmdLine *cmd_line_ptr, bool debug_mode)
         fprintf(stderr, "%s", "child executing command! \n");
     }
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
-    perror("There was an error executing command: "); perror(cmd_line_ptr->arguments[0]);
+    perror("There was an error executing command: ");
+    perror(cmd_line_ptr->arguments[0]);
     perror("\n");
     freeCmdLines(cmd_line_ptr);
     exit(1);
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -222,7 +227,6 @@ int main(int argc, char *argv[])
     {
         getcwd(buffer, PATH_MAX);
         printf("%s \n", buffer);
-        printf("Enter: ");
         fgets(userLine, MAX_USER_LINE, stdin);
         cmd_line = parseCmdLines(userLine);
         if (strcmp(cmd_line->arguments[0], "quit") == 0)
@@ -230,16 +234,45 @@ int main(int argc, char *argv[])
             freeCmdLines(cmd_line);
             break;
         }
-        if (strcmp(cmd_line->arguments[0], "cd") == 0)
+        else if (strcmp(cmd_line->arguments[0], "cd") == 0)
         {
             cd(cmd_line);
             freeCmdLines(cmd_line);
         }
-        else if (strcmp(cmd_line->arguments[0], "procs") == 0) {
+        else if (strcmp(cmd_line->arguments[0], "procs") == 0)
+        {
             printProcessList(processes);
             freeCmdLines(cmd_line);
-            
-        } else {
+        }
+        else if (strcmp(cmd_line->arguments[0], "suspend") == 0)
+        {
+            int proc_to_suspend = atoi(cmd_line->arguments[1]);
+            if(kill(proc_to_suspend, SIGTSTP) < 0) {
+                perror("couldn't suspend process number: ");
+                perror(cmd_line->arguments[1]); perror("\n");
+            };
+            freeCmdLines(cmd_line);
+        }
+        else if (strcmp(cmd_line->arguments[0], "kill") == 0)
+        {
+            int proc_to_kill = atoi(cmd_line->arguments[1]);
+            if(kill(proc_to_kill, SIGINT) < 0) {
+                perror("couldn't kill process number: ");
+                perror(cmd_line->arguments[1]); perror("\n");
+            };
+            freeCmdLines(cmd_line);
+        }
+        else if (strcmp(cmd_line->arguments[0], "wake") == 0)
+        {
+            int proc_to_wake = atoi(cmd_line->arguments[1]);
+             if(kill(proc_to_wake, SIGCONT) < 0) {
+                perror("couldn't wake process number: ");
+                perror(cmd_line->arguments[1]); perror("\n");
+            };
+            freeCmdLines(cmd_line);
+        }
+        else
+        {
             if (!(pid = fork()))
             {
                 execute(cmd_line, debug_mode);
@@ -251,7 +284,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                my_wait_pid(pid, cmd_line->blocking);
+                my_wait_pid(pid);
                 freeCmdLines(cmd_line);
             }
             if (debug_mode)
@@ -259,7 +292,6 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
             }
         }
-
     }
     destroy_all_processes(processes);
     return 0;
