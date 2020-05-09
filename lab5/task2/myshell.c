@@ -72,6 +72,7 @@ void addProcess(process **process_list, cmdLine *cmd, pid_t pid)
         addProcess(&(*process_list)->next, cmd, pid);
     }
 }
+
 void printProcessList(process **process_list)
 {
     printf("%s", "---------- PRINTING PROCESSES ---------- \n\n");
@@ -95,14 +96,12 @@ void printProcessList(process **process_list)
             str_status = "TERMINATED";
             break;
         }
-
         printf("status: %s ", str_status);
         printf("command : %s ", curr->cmd->arguments[0]);
         for (int j = 0; curr->cmd->arguments[j] != NULL; j++)
         {
             printf("arg %d : %s ", j, curr->cmd->arguments[j]);
         }
-
         if (curr->status == TERMINATED)
         {
             if (prev == NULL)
@@ -118,7 +117,6 @@ void printProcessList(process **process_list)
                 process *tmp = curr;
                 curr = curr->next;
                 destroy_single_process(tmp);
-
             }
         } else {
             prev = curr;
@@ -199,12 +197,13 @@ void execute(cmdLine *cmd_line_ptr, bool debug_mode)
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
     perror("There was an error executing command: "); perror(cmd_line_ptr->arguments[0]);
     perror("\n");
-    free(cmd_line_ptr);
+    freeCmdLines(cmd_line_ptr);
     exit(1);
 }
 
 int main(int argc, char *argv[])
 {
+
     bool debug_mode = false;
     for (int i = 1; i < argc; i++)
     {
@@ -239,6 +238,7 @@ int main(int argc, char *argv[])
         else if (strcmp(cmd_line->arguments[0], "procs") == 0) {
             printProcessList(processes);
             freeCmdLines(cmd_line);
+            
         } else {
             if (!(pid = fork()))
             {
