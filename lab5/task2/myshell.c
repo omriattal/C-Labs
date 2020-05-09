@@ -122,6 +122,7 @@ void printProcessList(process **process_list)
             }
         } else {
             prev = curr;
+            curr = curr->next;
         }
         printf("\n");
         i++;
