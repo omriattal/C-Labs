@@ -95,7 +95,7 @@ void printProcessList(process **process_list)
             str_status = "TERMINATED";
             break;
         }
-        
+
         printf("status: %s ", str_status);
         printf("command : %s ", curr->cmd->arguments[0]);
         for (int j = 0; curr->cmd->arguments[j] != NULL; j++)
@@ -104,29 +104,33 @@ void printProcessList(process **process_list)
         }
 
         if (curr->status == TERMINATED)
-        {  
+        {
             if (prev == NULL)
             {
                 *process_list = curr->next;
-                destroy_single_process(curr);
+                process *tmp = curr;
+                curr = curr->next;
+                destroy_single_process(tmp);
             }
             else
             {
                 prev->next = curr->next;
-                destroy_single_process(curr);
+                process *tmp = curr;
+                curr = curr->next;
+                destroy_single_process(tmp);
+
             }
+        } else {
+            prev = curr;
         }
         printf("\n");
         i++;
-        prev = curr;
-        curr = curr->next;
     }
-
+    printf("%s","\n\n");
 }
 
 void updateProcessList(process **process_list)
 {
-    printf("%s", "----- UPDATING PROCESSES -----\n");
     process *proc = *process_list;
     int status;
     while (proc != NULL)
@@ -182,8 +186,9 @@ void cd(cmdLine *cmd_line_ptr)
 }
 void my_wait_pid(int pid, int blocking)
 {
-        waitpid(pid, NULL, 0);
+    waitpid(pid, NULL, 0);
 }
+
 void execute(cmdLine *cmd_line_ptr, bool debug_mode)
 {
     if (debug_mode)
@@ -191,7 +196,9 @@ void execute(cmdLine *cmd_line_ptr, bool debug_mode)
         fprintf(stderr, "%s", "child executing command! \n");
     }
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
-    perror("There was an error executing \n");
+    perror("There was an error executing command: "); perror(cmd_line_ptr->arguments[0]);
+    perror("\n");
+    free(cmd_line_ptr);
     exit(1);
 }
 
@@ -215,37 +222,43 @@ int main(int argc, char *argv[])
     {
         getcwd(buffer, PATH_MAX);
         printf("%s \n", buffer);
+        printf("Enter: ");
         fgets(userLine, MAX_USER_LINE, stdin);
-        if (strncmp(userLine, "quit", 4) == 0)
+        cmd_line = parseCmdLines(userLine);
+        if (strcmp(cmd_line->arguments[0], "quit") == 0)
         {
+            freeCmdLines(cmd_line);
             break;
         }
-        cmd_line = parseCmdLines(userLine);
         if (strcmp(cmd_line->arguments[0], "cd") == 0)
         {
             cd(cmd_line);
+            freeCmdLines(cmd_line);
         }
-        else if (strcmp(cmd_line->arguments[0], "procs") == 0)
-        {
+        else if (strcmp(cmd_line->arguments[0], "procs") == 0) {
             printProcessList(processes);
-        }
-        else if (!(pid = fork()))
-        {
-            execute(cmd_line, debug_mode);
+            freeCmdLines(cmd_line);
+        } else {
+            if (!(pid = fork()))
+            {
+                execute(cmd_line, debug_mode);
+            }
+
+            if (!(cmd_line->blocking))
+            {
+                addProcess(processes, cmd_line, pid);
+            }
+            else
+            {
+                my_wait_pid(pid, cmd_line->blocking);
+                freeCmdLines(cmd_line);
+            }
+            if (debug_mode)
+            {
+                fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
+            }
         }
 
-        if (!(cmd_line->blocking))
-        {
-            addProcess(processes, cmd_line, pid);
-        }
-        else
-        {
-            my_wait_pid(pid, cmd_line->blocking);
-        }
-        if (debug_mode)
-        {
-            fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
-        }
     }
     destroy_all_processes(processes);
     return 0;
