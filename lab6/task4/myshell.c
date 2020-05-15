@@ -9,7 +9,6 @@
 #include <sys/wait.h>
 
 #define MAX_USER_LINE 2048
-
 typedef struct Binding
 {
     char *var;
@@ -261,7 +260,6 @@ int main(int argc, char *argv[])
         else if (strcmp(cmd_line->arguments[0], "cd") == 0)
         {
             cd(cmd_line);
-            freeCmdLines(cmd_line);
         }
         else if (strcmp(cmd_line->arguments[0], "set") == 0)
         {
@@ -273,12 +271,12 @@ int main(int argc, char *argv[])
             {
                 add_binding(binding_list, cmd_line->arguments[1], cmd_line->arguments[2]);
             }
-            freeCmdLines(cmd_line);
+            
         }
         else if (strcmp(cmd_line->arguments[0], "vars") == 0)
         {
             print_bindings(binding_list);
-            freeCmdLines(cmd_line);
+            
         }
         else if (cmd_line->next != NULL)
         {
@@ -315,7 +313,7 @@ int main(int argc, char *argv[])
             close(pipefd[0]);
             waitpid(child1, NULL, 0);
             waitpid(child2, NULL, 0);
-            freeCmdLines(first);
+            cmd_line = first;
         }
         else
         {
@@ -328,10 +326,10 @@ int main(int argc, char *argv[])
             {
                 fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
             }
-
             my_wait_pid(pid, cmd_line->blocking);
-            freeCmdLines(cmd_line);
+           
         }
+         freeCmdLines(cmd_line);
     }
     destroy_all_bindings(binding_list);
     return 0;
