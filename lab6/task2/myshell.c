@@ -19,22 +19,28 @@ typedef struct Binding
 } BINDING;
 
 BINDING *makeBinding(char *var, char *value, BINDING *next);
+char *copy_string(char *str);
 void destroy_single_binding(BINDING *binding);
 void destroy_binding_list(BINDING *binding);
 void add_binding(BINDING **bindings, char *var, char *value);
 bool check_binding(BINDING *binding, char *var);
 void set_new_binding(BINDING *binding, char *value);
 void print_bindings(BINDING **bindings);
+char *get_value(BINDING **bindings, char *var);
 
 //BINDING RELATED FUNCTIONS
 BINDING *makeBinding(char *var, char *value, BINDING *next)
 {
     BINDING *binding = (BINDING *)(malloc(sizeof(BINDING)));
-    binding->var = strcpy(calloc(strlen(var),1),var);
-    binding->value = strcpy(calloc(strlen(value),1),value);
+    binding->var = copy_string(var);
+    binding->value = copy_string(value);
     binding->next = next;
     return binding;
+}
 
+char *copy_string(char *str)
+{
+    return strcpy(calloc(strlen(str), 1), str);
 }
 void destroy_single_binding(BINDING *binding)
 {
@@ -88,7 +94,22 @@ bool check_binding(BINDING *binding, char *var)
 void set_new_binding(BINDING *binding, char *value)
 {
     free(binding->value);
-    binding->value = strcpy(calloc(strlen(value),1),value);
+    binding->value = copy_string(value);
+}
+
+char *get_value(BINDING **bindings, char *var)
+{
+
+    BINDING *binding = *bindings;
+    while (binding != NULL)
+    {
+        if (strcmp(binding->var, var) == 0)
+        {
+            return binding->value;
+        }
+        binding = binding->next;
+    }
+    return NULL;
 }
 
 void print_bindings(BINDING **bindings)
@@ -105,6 +126,28 @@ void print_bindings(BINDING **bindings)
     }
     printf("%s", "\n--------------------------------------------\n");
 }
+
+
+void apply_bindings(BINDING **bindings, cmdLine *cmd_line)
+{
+    for (int i = 0; i < cmd_line->argCount; i++)
+    {
+        char *arg = cmd_line->arguments[i];
+        if (strncmp(arg, "$", 1) == 0)
+        {
+            char *arg_value = get_value(bindings, arg + 1);
+            if (arg_value != NULL)
+            {
+                replaceCmdArg(cmd_line, i, arg_value);
+            }
+            else
+            {
+                perror("variable not found :( \n");
+            }
+        }
+    }
+}
+
 
 void redirect(cmdLine *cmd_line_ptr)
 {
@@ -195,6 +238,7 @@ int main(int argc, char *argv[])
         printf("%s \n", buffer);
         fgets(userLine, MAX_USER_LINE, stdin);
         cmd_line = parseCmdLines(userLine);
+        apply_bindings(binding_list,cmd_line);
         if (strcmp(cmd_line->arguments[0], "quit") == 0)
         {
             freeCmdLines(cmd_line);
@@ -214,8 +258,7 @@ int main(int argc, char *argv[])
             {
                 add_binding(binding_list, cmd_line->arguments[1], cmd_line->arguments[2]);
             }
-
-        } 
+        }
         else if (strcmp(cmd_line->arguments[0], "vars") == 0)
         {
             print_bindings(binding_list);
@@ -232,7 +275,6 @@ int main(int argc, char *argv[])
 
         my_wait_pid(pid, cmd_line->blocking);
         freeCmdLines(cmd_line);
-
     }
     destroy_all_bindings(binding_list);
     return 0;
