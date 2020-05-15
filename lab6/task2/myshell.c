@@ -40,7 +40,7 @@ BINDING *makeBinding(char *var, char *value, BINDING *next)
 
 char *copy_string(char *str)
 {
-    return strcpy(calloc(strlen(str), 1), str);
+    return strcpy(calloc(strlen(str) + 1, 1), str);
 }
 void destroy_single_binding(BINDING *binding)
 {
@@ -186,11 +186,15 @@ void cd(cmdLine *cmd_line_ptr)
         if (strcmp(cmd_line_ptr->arguments[1], "~") == 0)
         {
             char *path = getenv("HOME");
-            if(path!=NULL) {
-                if(chdir(path)!=0) {
+            if (path != NULL)
+            {
+                if (chdir(path) != 0)
+                {
                     perror("can not change directory \n");
                 }
-            } else {
+            }
+            else
+            {
                 perror("can not change directory");
             }
         }
@@ -220,7 +224,7 @@ void execute(cmdLine *cmd_line_ptr, bool debug_mode)
     redirect(cmd_line_ptr);
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
     perror("There was an error executing \n");
-    free(cmd_line_ptr);
+    freeCmdLines(cmd_line_ptr);
     exit(1);
 }
 
@@ -257,6 +261,7 @@ int main(int argc, char *argv[])
         else if (strcmp(cmd_line->arguments[0], "cd") == 0)
         {
             cd(cmd_line);
+            freeCmdLines(cmd_line);
         }
         else if (strcmp(cmd_line->arguments[0], "set") == 0)
         {
@@ -268,23 +273,27 @@ int main(int argc, char *argv[])
             {
                 add_binding(binding_list, cmd_line->arguments[1], cmd_line->arguments[2]);
             }
+            freeCmdLines(cmd_line);
         }
         else if (strcmp(cmd_line->arguments[0], "vars") == 0)
         {
             print_bindings(binding_list);
+            freeCmdLines(cmd_line);
         }
-        else if (!(pid = fork()))
+        else
         {
-            execute(cmd_line, debug_mode);
-        }
+            if (!(pid = fork()))
+            {
+                execute(cmd_line, debug_mode);
+            }
 
-        if (debug_mode)
-        {
-            fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
+            if (debug_mode)
+            {
+                fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
+            }
+            my_wait_pid(pid, cmd_line->blocking);
+            freeCmdLines(cmd_line);
         }
-
-        my_wait_pid(pid, cmd_line->blocking);
-        freeCmdLines(cmd_line);
     }
     destroy_all_bindings(binding_list);
     return 0;
