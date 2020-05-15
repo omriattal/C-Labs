@@ -224,6 +224,7 @@ void execute(cmdLine *cmd_line_ptr, bool debug_mode)
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
     perror("There was an error executing \n");
     freeCmdLines(cmd_line_ptr);
+    cmd_line_ptr=NULL;
     exit(1);
 }
 
@@ -327,7 +328,6 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
             }
             my_wait_pid(pid, cmd_line->blocking);
-           
         }
          freeCmdLines(cmd_line);
     }
