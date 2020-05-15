@@ -47,8 +47,8 @@ int main(int argc, char* argv[]) {
         if(debug_mode) {}
         debug_print(debug_mode,"child 1 > redirecting stdout to the write end of the pipe\n");
         close(pipefd[1]);
-        execvp(ls_cmd[0],ls_cmd);
         debug_print(debug_mode,"child 1 > going to executre cmd: ls -l\n");
+        execvp(ls_cmd[0],ls_cmd);
         perror("child 1 : error exectuing command");
         exit(1);
     }
@@ -56,8 +56,6 @@ int main(int argc, char* argv[]) {
     debug_print_with_int(debug_mode,"parent process > created process with id: ",child1);
     debug_print(debug_mode,"parent process > closing the write end of the pipe\n");
     close(pipefd[1]);
-
-
 
     debug_print(debug_mode,"parent process > forking\n");
     if(!(cpid = fork())) { // child 2
