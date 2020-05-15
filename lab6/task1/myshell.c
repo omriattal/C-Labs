@@ -9,6 +9,11 @@
 #include <sys/wait.h>
 
 #define MAX_USER_LINE 2048 
+
+
+
+
+
 void redirect(cmdLine* cmd_line_ptr) {
  if (cmd_line_ptr->inputRedirect != NULL)
     {
@@ -53,7 +58,7 @@ void cd(cmdLine *cmd_line_ptr)
         perror("can not change directory \n");
     }
 }
-void wait_pid(int pid, int blocking)
+void my_wait_pid(int pid, int blocking)
 {
     if (blocking)
     {
@@ -99,7 +104,7 @@ int main(int argc, char *argv[])
             freeCmdLines(cmd_line);
             break;
         }
-        if (strcmp(cmd_line->arguments[0], "cd") == 0)
+        else if (strcmp(cmd_line->arguments[0], "cd") == 0)
         {
             cd(cmd_line);
             freeCmdLines(cmd_line);
@@ -113,7 +118,8 @@ int main(int argc, char *argv[])
         {
             fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
         }
-        wait_pid(pid, cmd_line->blocking);
+
+        my_wait_pid(pid, cmd_line->blocking);
     }
     return 0;
 }
