@@ -127,7 +127,6 @@ void print_bindings(BINDING **bindings)
     printf("%s", "\n--------------------------------------------\n");
 }
 
-
 void apply_bindings(BINDING **bindings, cmdLine *cmd_line)
 {
     for (int i = 0; i < cmd_line->argCount; i++)
@@ -147,7 +146,6 @@ void apply_bindings(BINDING **bindings, cmdLine *cmd_line)
         }
     }
 }
-
 
 void redirect(cmdLine *cmd_line_ptr)
 {
@@ -184,7 +182,19 @@ void cd(cmdLine *cmd_line_ptr)
 {
     if (cmd_line_ptr->arguments[1] != NULL)
     {
-        if (chdir(cmd_line_ptr->arguments[1]) != 0)
+
+        if (strcmp(cmd_line_ptr->arguments[1], "~") == 0)
+        {
+            char *path = getenv("HOME");
+            if(path!=NULL) {
+                if(chdir(path)!=0) {
+                    perror("can not change directory \n");
+                }
+            } else {
+                perror("can not change directory");
+            }
+        }
+        else if (chdir(cmd_line_ptr->arguments[1]) != 0)
         {
             perror("can not change directory \n");
         }
@@ -238,7 +248,7 @@ int main(int argc, char *argv[])
         printf("%s \n", buffer);
         fgets(userLine, MAX_USER_LINE, stdin);
         cmd_line = parseCmdLines(userLine);
-        apply_bindings(binding_list,cmd_line);
+        apply_bindings(binding_list, cmd_line);
         if (strcmp(cmd_line->arguments[0], "quit") == 0)
         {
             freeCmdLines(cmd_line);
