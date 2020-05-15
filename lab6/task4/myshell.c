@@ -144,6 +144,7 @@ void apply_bindings(BINDING **bindings, cmdLine *cmd_line)
             }
         }
     }
+
 }
 
 void redirect(cmdLine *cmd_line_ptr)
@@ -224,7 +225,6 @@ void execute(cmdLine *cmd_line_ptr, bool debug_mode)
     execvp(cmd_line_ptr->arguments[0], cmd_line_ptr->arguments);
     perror("There was an error executing \n");
     freeCmdLines(cmd_line_ptr);
-    cmd_line_ptr=NULL;
     exit(1);
 }
 
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
             debug_mode = true;
         }
     }
-    BINDING **binding_list = (BINDING **)(malloc(sizeof(BINDING *)));
+    BINDING **binding_list = (BINDING **)(malloc(sizeof(BINDING*)));
     *binding_list = NULL;
     int pipefd[2];
     char buffer[PATH_MAX];
@@ -252,7 +252,9 @@ int main(int argc, char *argv[])
         printf("%s \n", buffer);
         fgets(userLine, MAX_USER_LINE, stdin);
         cmd_line = parseCmdLines(userLine);
+        
         apply_bindings(binding_list, cmd_line);
+        
         if (strcmp(cmd_line->arguments[0], "quit") == 0)
         {
             freeCmdLines(cmd_line);
