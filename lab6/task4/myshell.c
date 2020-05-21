@@ -146,9 +146,8 @@ void apply_bindings(BINDING **bindings, cmdLine *cmd_line)
     }
 
 }
+void redirect_input(cmdLine* cmd_line_ptr) {
 
-void redirect(cmdLine *cmd_line_ptr)
-{
     if (cmd_line_ptr->inputRedirect != NULL)
     {
         if (fclose(stdin) != -1)
@@ -162,21 +161,29 @@ void redirect(cmdLine *cmd_line_ptr)
         {
             perror("error redirecting the input");
         }
-    }
+    }  
+}
+void redirect_output(cmdLine* cmd_line_ptr) {
+
     if (cmd_line_ptr->outputRedirect != NULL)
     {
-        if (fclose(stdout) != -1)
+        if (fclose(stdin) != -1)
         {
-            if (fopen(cmd_line_ptr->outputRedirect, "w") == NULL)
+            if (fopen(cmd_line_ptr->outputRedirect, "r") == NULL)
             {
-                perror("error redirecting the output");
+                perror("error redirecting the input");
             }
         }
         else
         {
-            perror("error redirecting the output");
+            perror("error redirecting the input");
         }
-    }
+    }  
+}
+void redirect(cmdLine *cmd_line_ptr)
+{
+    redirect_input(cmd_line_ptr);
+    redirect_output(cmd_line_ptr);
 }
 void cd(cmdLine *cmd_line_ptr)
 {
@@ -296,8 +303,8 @@ int main(int argc, char *argv[])
             {                   // child 1
                 fclose(stdout); // closing stdout
                 dup(pipefd[1]);
-                redirect(first); // check change
                 close(pipefd[1]);
+                redirect_input(first);
                 execvp(first->arguments[0], first->arguments);
                 perror("error executing first command of pipe");
                 exit(1);
@@ -308,8 +315,8 @@ int main(int argc, char *argv[])
             {                  // child 2
                 fclose(stdin); // closing stdin
                 dup(pipefd[0]);
-                redirect(first);
                 close(pipefd[0]);
+                redirect_output(second);
                 execvp(second->arguments[0], second->arguments);
                 perror("error executing second command of pipe");
                 exit(1);
