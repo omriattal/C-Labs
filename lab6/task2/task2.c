@@ -99,7 +99,6 @@ void set_new_binding(BINDING *binding, char *value)
 
 char *get_value(BINDING **bindings, char *var)
 {
-
     BINDING *binding = *bindings;
     while (binding != NULL)
     {
@@ -127,13 +126,14 @@ void print_bindings(BINDING **bindings)
     printf("%s", "\n--------------------------------------------\n");
 }
 
-void apply_bindings(BINDING **bindings, cmdLine *cmd_line)
+bool apply_bindings(BINDING **bindings, cmdLine *cmd_line)
 {
     for (int i = 0; i < cmd_line->argCount; i++)
     {
         char *arg = cmd_line->arguments[i];
         if (strncmp(arg, "$", 1) == 0)
         {
+
             char *arg_value = get_value(bindings, arg + 1);
             if (arg_value != NULL)
             {
@@ -142,9 +142,11 @@ void apply_bindings(BINDING **bindings, cmdLine *cmd_line)
             else
             {
                 perror("variable not found :( \n");
+                return false;
             }
         }
     }
+    return true;
 }
 
 void redirect(cmdLine *cmd_line_ptr)
@@ -252,46 +254,50 @@ int main(int argc, char *argv[])
         printf("%s \n", buffer);
         fgets(userLine, MAX_USER_LINE, stdin);
         cmd_line = parseCmdLines(userLine);
-        apply_bindings(binding_list, cmd_line);
-        if (strcmp(cmd_line->arguments[0], "quit") == 0)
+        if (apply_bindings(binding_list, cmd_line))
         {
-            freeCmdLines(cmd_line);
-            break;
-        }
-        else if (strcmp(cmd_line->arguments[0], "cd") == 0)
-        {
-            cd(cmd_line);
-            freeCmdLines(cmd_line);
-        }
-        else if (strcmp(cmd_line->arguments[0], "set") == 0)
-        {
-            if (cmd_line->arguments[1] == NULL || cmd_line->arguments[2] == NULL)
+            if (strcmp(cmd_line->arguments[0], "quit") == 0)
             {
-                perror("invalid set operation\n");
+                freeCmdLines(cmd_line);
+                break;
+            }
+            else if (strcmp(cmd_line->arguments[0], "cd") == 0)
+            {
+                cd(cmd_line);
+                freeCmdLines(cmd_line);
+            }
+            else if (strcmp(cmd_line->arguments[0], "set") == 0)
+            {
+                if (cmd_line->arguments[1] == NULL || cmd_line->arguments[2] == NULL)
+                {
+                    perror("invalid set operation\n");
+                }
+                else
+                {
+                    add_binding(binding_list, cmd_line->arguments[1], cmd_line->arguments[2]);
+                }
+                freeCmdLines(cmd_line);
+            }
+            else if (strcmp(cmd_line->arguments[0], "vars") == 0)
+            {
+                print_bindings(binding_list);
+                freeCmdLines(cmd_line);
             }
             else
             {
-                add_binding(binding_list, cmd_line->arguments[1], cmd_line->arguments[2]);
-            }
-            freeCmdLines(cmd_line);
-        }
-        else if (strcmp(cmd_line->arguments[0], "vars") == 0)
-        {
-            print_bindings(binding_list);
-            freeCmdLines(cmd_line);
-        }
-        else
-        {
-            if (!(pid = fork()))
-            {
-                execute(cmd_line, debug_mode);
-            }
+                if (!(pid = fork()))
+                {
+                    execute(cmd_line, debug_mode);
+                }
 
-            if (debug_mode)
-            {
-                fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
+                if (debug_mode)
+                {
+                    fprintf(stderr, "%s %d %s", "The parent pid is: ", pid, "\n");
+                }
+                my_wait_pid(pid, cmd_line->blocking);
+                freeCmdLines(cmd_line);
             }
-            my_wait_pid(pid, cmd_line->blocking);
+        } else {
             freeCmdLines(cmd_line);
         }
     }
