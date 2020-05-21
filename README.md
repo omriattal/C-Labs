@@ -6,6 +6,6 @@ The course is part of computer science bachelor's degree mandatory courses.
 #### [LAB3 - C programming - data structures, virus detection, patching](https://www.cs.bgu.ac.il/~caspl202/Lab3/Tasks)
 #### [LAB4 - System Calls](https://www.cs.bgu.ac.il/~caspl202/Lab4/Tasks)
 #### [LAB5 - Command Interpreter (Shell)](https://www.cs.bgu.ac.il/~caspl202/Lab5/Tasks)
-
+#### [LAB6 - Shell: I/O Redirection and Pipes](https://www.cs.bgu.ac.il/~caspl202/Lab6/Tasks)
 
 

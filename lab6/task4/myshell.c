@@ -296,6 +296,7 @@ int main(int argc, char *argv[])
             {                   // child 1
                 fclose(stdout); // closing stdout
                 dup(pipefd[1]);
+                redirect(first); // check change
                 close(pipefd[1]);
                 execvp(first->arguments[0], first->arguments);
                 perror("error executing first command of pipe");
@@ -307,6 +308,7 @@ int main(int argc, char *argv[])
             {                  // child 2
                 fclose(stdin); // closing stdin
                 dup(pipefd[0]);
+                redirect(first);
                 close(pipefd[0]);
                 execvp(second->arguments[0], second->arguments);
                 perror("error executing second command of pipe");
