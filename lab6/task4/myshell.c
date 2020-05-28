@@ -70,7 +70,7 @@ void add_binding(BINDING **bindings, char *var, char *value)
 {
     if (*bindings == NULL)
     {
-        *bindings = makeBinding(var, value, NULL);
+        *bindings = makeBinding(var, value, NULL );
     }
     else
     {

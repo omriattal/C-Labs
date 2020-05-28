@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
         else if (strcmp(cmd_line->arguments[0], "wake") == 0)
         {
             int proc_to_wake = atoi(cmd_line->arguments[1]);
-             if(kill(proc_to_wake, SIGCONT) < 0) {
+            if(kill(proc_to_wake, SIGCONT) < 0) {
                 perror("couldn't wake process number: ");
                 perror(cmd_line->arguments[1]); perror("\n");
             };
