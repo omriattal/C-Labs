@@ -62,7 +62,15 @@ char *format(STATE *state)
     }
     return "%d";
 }
-
+int sizeof_file(char* filename){
+    FILE *file = fopen(filename,"r");
+    int size=0;
+    fseek(file,0,SEEK_END);
+    size = ftell(file);
+    fseek(file,0,SEEK_SET);
+    fclose(file);
+    return size;
+}
 // MENU FUNCTIONS
 void toggle_debug_mode(STATE *state)
 {
@@ -131,7 +139,6 @@ void set_file_name(STATE *state)
     sscanf(file_name_tmp, "%s", file_name);
     strcpy(state->file_name, file_name);
     debug_print(state->debug_mode, "Debug: file name set to: ", file_name);
-    printf("%s", "\n");
 }
 void set_unit_size(STATE *state)
 {
@@ -167,12 +174,12 @@ void load_into_memory(STATE *state)
     int location;
     int length;
     char input_tmp[INPUT_MAX_SIZE];
-    printf("Enter location: ");
+    printf("\nEnter location: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
     sscanf(input_tmp, "%X", &location);
     debug_print_hexa(state->debug_mode, "\nDebug: The location is: ", location);
 
-    printf("\nEnter length: ");
+    printf("Enter length: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
     sscanf(input_tmp, "%d", &length);
 
@@ -181,7 +188,7 @@ void load_into_memory(STATE *state)
     debug_print_hexa(state->debug_mode, "\nDebug: The location is: ", location);
     fseek(file, location, SEEK_SET);
     fread(state->mem_buf, state->unit_size, length, file);
-    printf("\n\nLoaded %d units in to memory\n", length);
+    printf("--------Loaded %d units in to memory--------\n", length);
 
     state->mem_count = state->unit_size * length;
     fclose(file);
@@ -204,7 +211,7 @@ void memory_display(STATE *state)
     char input_tmp[INPUT_MAX_SIZE];
     int u;
     int addr;
-    char *buffer = (char *)state->mem_buf;
+    unsigned char *buffer = state->mem_buf;
     printf("\nEnter amount of units: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
     sscanf(input_tmp, "%d", &u);
@@ -217,21 +224,22 @@ void memory_display(STATE *state)
         printf("%s","\n-------- PRINTING MEMORY WITH DECIMAL REPRESENTATION --------\n");
     }
     if(addr!=0) {
-        buffer = (char*)addr;
+        buffer = (unsigned char*)addr;
     }
-    char *end = buffer + state->unit_size * u;
+    unsigned char *end = buffer + state->unit_size * u;
     while (buffer < end)
     {
+        //TODO: CHECK GENERICS
         if (state->unit_size == 1)
         {
-            int var = *((char *)(buffer));
+            unsigned char var = *((unsigned char *)(buffer));
             fprintf(stdout, format(state), var);
             printf("%s", "\n");
             buffer += state->unit_size;
         }
         else if (state->unit_size == 2)
         {
-            int var = *((short *)(buffer));
+            short var = *((short *)(buffer));
             fprintf(stdout, format(state), htons(var));
             printf("%s", "\n");
             buffer += state->unit_size;
@@ -245,7 +253,33 @@ void memory_display(STATE *state)
         }
     }
 }
+void save_into_file(STATE *state){
+    int source_addr,target_loc,length;
+    char input_tmp[INPUT_MAX_SIZE];
+    printf("Enter source address: ");
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp,"%X",&source_addr);
+    printf("Enter target location: ");
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp,"%X",&target_loc);
+    printf("Enter length: ");
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp,"%d",&length);
 
+    if(target_loc>=sizeof_file(state->file_name)){
+        fprintf(stdout,"%s %d","The size is: ",sizeof_file(state->file_name));
+        printf("%s","Error: target location is greater than the file's size\n");
+         return;
+    }
+    unsigned char *buffer = (unsigned char *)state->mem_buf;
+    if(source_addr!=0) {
+        buffer = (unsigned char *)source_addr;      
+    }
+    FILE* file = fopen(state->file_name,"r+");
+    fseek(file,target_loc,SEEK_SET);
+    fwrite(buffer,state->unit_size,length,file);
+    fclose(file);
+}
 void quit(STATE *state)
 {
     free(state);
@@ -267,6 +301,7 @@ int main(int argc, char **argv)
                         {"load into memory", &load_into_memory},
                         {"toggle display mode", &toggle_display_mode},
                         {"memory display", &memory_display},
+                        {"save into file", &save_into_file},
                         {"quit", &quit},
                         {NULL, NULL}};
     int bounds = calculate_menu_bounds(menu);
