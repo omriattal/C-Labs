@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <arpa/inet.h>
 
 #define INPUT_MAX_SIZE 1024
 #define FILE_NAME_INPUT_MAX_SIZE 100
 #define MEM_BUF_SIZE 10000
-
 
 typedef struct
 {
@@ -30,23 +32,36 @@ bool withinBounds(int bounds, int c);
 void print_menu(FUNC_DESC menu[]);
 bool valid_unit_size(int size);
 int calculate_menu_bounds(FUNC_DESC menu[]);
-void debug_print (bool debug_mode,char* str1, char *str2) {
-    if(debug_mode){
-        fprintf(stderr,"%s %s",str1,str2);
+void debug_print(bool debug_mode, char *str1, char *str2)
+{
+    if (debug_mode)
+    {
+        fprintf(stderr, "%s %s", str1, str2);
     }
 }
-void debug_print_int (bool debug_mode,char* str1, int num) {
-    if(debug_mode){
-        fprintf(stderr,"%s %d",str1,num);
+void debug_print_int(bool debug_mode, char *str1, int num)
+{
+    if (debug_mode)
+    {
+        fprintf(stderr, "%s %d", str1, num);
     }
 }
-void debug_print_hexa (bool debug_mode,char* str1, int num) {
-    if(debug_mode){
-        fprintf(stderr,"%s %02X",str1,num);
+void debug_print_hexa(bool debug_mode, char *str1, int num)
+{
+    if (debug_mode)
+    {
+        fprintf(stderr, "%s %02X", str1, num);
     }
 }
-void init_state (STATE* state);
-
+void init_state(STATE *state);
+char *format(STATE *state)
+{
+    if (state->display_mode)
+    {
+        return "%X";
+    }
+    return "%d";
+}
 
 // MENU FUNCTIONS
 void toggle_debug_mode(STATE *state)
@@ -61,21 +76,51 @@ void toggle_debug_mode(STATE *state)
         state->debug_mode = true;
         printf("Debug flag mode now on\n");
     }
-
-    printf("%s","\nTHE STATE: \n");
-    if(state->debug_mode) {
-        printf("%s","The debug mode is: true \n");
-    } else {
-        printf("%s","The debug mode is: false \n");
+    printf("%s", "\nTHE STATE: \n");
+    if (state->debug_mode)
+    {
+        printf("%s", "The debug mode is: true \n");
     }
-    printf("The file name is: %s \n",state->file_name);
-    printf("The unit size is: %d \n",state->unit_size);
-    printf("The mem count is: %d \n",state->mem_count);
-    if(state->display_mode) {
-        printf("%s","The display mode is: on \n");
-    } else {
-        printf("%s","The display mode is: off \n");
+    else
+    {
+        printf("%s", "The debug mode is: false \n");
     }
+    printf("The file name is: %s \n", state->file_name);
+    printf("The unit size is: %d \n", state->unit_size);
+    printf("The mem count is: %d \n", state->mem_count);
+    if (state->display_mode)
+    {
+        printf("%s", "The display mode is: on \n");
+    }
+    else
+    {
+        printf("%s", "The display mode is: off \n");
+    }
+}
+void print_state(STATE *state)
+{
+    printf("%s", "\nTHE STATE: \n");
+    if (state->debug_mode)
+    {
+        printf("%s", "The debug mode is: ON \n");
+    }
+    else
+    {
+        printf("%s", "The debug mode is: OFF \n");
+    }
+       if (state->display_mode)
+    {
+        printf("%s", "The display mode is: ON \n");
+    }
+    else
+    {
+        printf("%s", "The display mode is: OFF \n");
+    }
+    printf("The file name is: %s \n", state->file_name);
+    printf("The unit size is: %d \n", state->unit_size);
+    printf("The mem count is: %d \n", state->mem_count);
+    fprintf(stdout,"%s %p","The membuf location:\n",state->mem_buf);
+ 
 }
 void set_file_name(STATE *state)
 {
@@ -85,12 +130,12 @@ void set_file_name(STATE *state)
     fgets(file_name_tmp, FILE_NAME_INPUT_MAX_SIZE, stdin);
     sscanf(file_name_tmp, "%s", file_name);
     strcpy(state->file_name, file_name);
-    debug_print(state->debug_mode,"Debug: file name set to: ",file_name);
-    printf("%s","\n");
+    debug_print(state->debug_mode, "Debug: file name set to: ", file_name);
+    printf("%s", "\n");
 }
 void set_unit_size(STATE *state)
 {
-    printf("\nenter number: ");
+    printf("\nEnter unit size: ");
     char size_tmp[INPUT_MAX_SIZE];
     int size = 0;
     fgets(size_tmp, INPUT_MAX_SIZE, stdin);
@@ -98,57 +143,109 @@ void set_unit_size(STATE *state)
     if (valid_unit_size(size))
     {
         state->unit_size = size;
-        debug_print_int(state->debug_mode,"Debug: set size to: ",size);
+        debug_print_int(state->debug_mode, "Debug: set size to: ", size);
     }
     else
     {
         fprintf(stdout, "%s", "Invalid unit size!");
     }
-    printf("%s","\n");
+    printf("%s", "\n");
 }
-void load_into_memory(STATE* state){
-    if(state->file_name==NULL){
+void load_into_memory(STATE *state)
+{
+    if (state->file_name == NULL)
+    {
         printf("Error: file name is null\n");
         return;
     }
-    FILE *file = fopen(state->file_name,"r");
-    if(file==NULL) {
+    FILE *file = fopen(state->file_name, "r");
+    if (file == NULL)
+    {
         printf("Error opening the file\n");
         return;
     }
     int location;
     int length;
-    char input_tmp [INPUT_MAX_SIZE];
+    char input_tmp[INPUT_MAX_SIZE];
     printf("Enter location: ");
-    fgets(input_tmp,INPUT_MAX_SIZE,stdin);
-    sscanf(input_tmp,"%X",&location);
-    debug_print_hexa(state->debug_mode,"\nDebug: The location is: ",location);
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp, "%X", &location);
+    debug_print_hexa(state->debug_mode, "\nDebug: The location is: ", location);
 
     printf("\nEnter length: ");
-    fgets(input_tmp,INPUT_MAX_SIZE,stdin);
-    sscanf(input_tmp,"%d",&length);
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp, "%d", &length);
 
-    debug_print(state->debug_mode,"\nDebug: The filename:",state->file_name);
-    debug_print_int(state->debug_mode,"\nDebug: The length is:",length);
-    debug_print_hexa(state->debug_mode,"\nDebug: The location is: ",location);
-    fseek(file,location,SEEK_SET);
-    fread(state->mem_buf,state->unit_size,length,file);
-    printf("\n\nLoaded %d units in to memory\n",length);
+    debug_print(state->debug_mode, "\nDebug: The filename:", state->file_name);
+    debug_print_int(state->debug_mode, "\nDebug: The length is:", length);
+    debug_print_hexa(state->debug_mode, "\nDebug: The location is: ", location);
+    fseek(file, location, SEEK_SET);
+    fread(state->mem_buf, state->unit_size, length, file);
+    printf("\n\nLoaded %d units in to memory\n", length);
 
-    state->mem_count += state->unit_size * length;
+    state->mem_count = state->unit_size * length;
     fclose(file);
-
-    
 }
-void toggle_display_mode(STATE* state) {
-    if(state->display_mode) {
-        printf("Display flag now off, decimal representation \n");
-        state->display_mode=false;
-    } else {
-        printf("Display flag now on, hexadecimal representatio\n");
-        state->display_mode=true;
+void toggle_display_mode(STATE *state)
+{
+    if (state->display_mode)
+    {
+        printf("Display flag now off, DECIMAL representation \n");
+        state->display_mode = false;
+    }
+    else
+    {
+        printf("Display flag now on, HEXADECIMAL representation\n");
+        state->display_mode = true;
     }
 }
+void memory_display(STATE *state)
+{
+    char input_tmp[INPUT_MAX_SIZE];
+    int u;
+    int addr;
+    char *buffer = (char *)state->mem_buf;
+    printf("\nEnter amount of units: ");
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp, "%d", &u);
+    printf("Enter address: ");
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp, "%X", &addr);
+    if(state->display_mode){
+        printf("%s","\n------ PRINTING MEMORY WITH HEXADECIMAL REPRESENTATION ------\n");
+    } else {
+        printf("%s","\n-------- PRINTING MEMORY WITH DECIMAL REPRESENTATION --------\n");
+    }
+    if(addr!=0) {
+        buffer = (char*)addr;
+    }
+    char *end = buffer + state->unit_size * u;
+    while (buffer < end)
+    {
+        if (state->unit_size == 1)
+        {
+            int var = *((char *)(buffer));
+            fprintf(stdout, format(state), var);
+            printf("%s", "\n");
+            buffer += state->unit_size;
+        }
+        else if (state->unit_size == 2)
+        {
+            int var = *((short *)(buffer));
+            fprintf(stdout, format(state), htons(var));
+            printf("%s", "\n");
+            buffer += state->unit_size;
+        }
+        else
+        {
+            int var = *((int *)(buffer));
+            fprintf(stdout, format(state),htonl(var));
+            printf("%s", "\n");
+            buffer += state->unit_size;
+        }
+    }
+}
+
 void quit(STATE *state)
 {
     free(state);
@@ -157,17 +254,19 @@ void quit(STATE *state)
 
 int main(int argc, char **argv)
 {
-    STATE *state = (STATE *)(malloc (sizeof(STATE)));
+    STATE *state = (STATE *)(malloc(sizeof(STATE)));
     init_state(state);
 
     int parsed_input = 0;
     char strInput[INPUT_MAX_SIZE];
     char strinputTmp[INPUT_MAX_SIZE];
     FUNC_DESC menu[] = {{"toggle debug mode", &toggle_debug_mode},
+                        {"print state info", &print_state},
                         {"set file name", &set_file_name},
                         {"set unit size", &set_unit_size},
                         {"load into memory", &load_into_memory},
-                        {"toggle display mode",&toggle_display_mode},
+                        {"toggle display mode", &toggle_display_mode},
+                        {"memory display", &memory_display},
                         {"quit", &quit},
                         {NULL, NULL}};
     int bounds = calculate_menu_bounds(menu);
@@ -184,14 +283,15 @@ int main(int argc, char **argv)
         {
             (*menu[parsed_input].func)(state);
         }
-        printf("%s","\n");
+        printf("%s", "\n");
     }
 }
-void init_state (STATE* state) {
+void init_state(STATE *state)
+{
     state->debug_mode = false;
-    state->unit_size=1;
-    state->mem_count=0;
-    state->display_mode=false;
+    state->unit_size = 1;
+    state->mem_count = 0;
+    state->display_mode = false;
 }
 bool withinBounds(int bounds, int c)
 {
@@ -219,6 +319,9 @@ bool valid_unit_size(int size)
 int calculate_menu_bounds(FUNC_DESC menu[])
 {
     int bound = 0;
-    for (int i = 0; menu[i].name != NULL; i++){bound++;}
-    return bound-1;
+    for (int i = 0; menu[i].name != NULL; i++)
+    {
+        bound++;
+    }
+    return bound - 1;
 }
