@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
+#include <limits.h>
 
 #define INPUT_MAX_SIZE 1024
 #define FILE_NAME_INPUT_MAX_SIZE 100
@@ -50,11 +51,11 @@ void debug_print_hexa(bool debug_mode, char *str1, int num)
 {
     if (debug_mode)
     {
-        fprintf(stderr, "%s %02X", str1, num);
+        fprintf(stderr, "%s %X", str1, num);
     }
 }
 void init_state(STATE *state);
-char *format(STATE *state)
+char *format_from_state(STATE *state)
 {
     if (state->display_mode)
     {
@@ -62,12 +63,13 @@ char *format(STATE *state)
     }
     return "%d";
 }
-int sizeof_file(char* filename){
-    FILE *file = fopen(filename,"r");
-    int size=0;
-    fseek(file,0,SEEK_END);
+int sizeof_file(char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    int size = 0;
+    fseek(file, 0, SEEK_END);
     size = ftell(file);
-    fseek(file,0,SEEK_SET);
+    fseek(file, 0, SEEK_SET);
     fclose(file);
     return size;
 }
@@ -84,26 +86,6 @@ void toggle_debug_mode(STATE *state)
         state->debug_mode = true;
         printf("Debug flag mode now on\n");
     }
-    printf("%s", "\nTHE STATE: \n");
-    if (state->debug_mode)
-    {
-        printf("%s", "The debug mode is: true \n");
-    }
-    else
-    {
-        printf("%s", "The debug mode is: false \n");
-    }
-    printf("The file name is: %s \n", state->file_name);
-    printf("The unit size is: %d \n", state->unit_size);
-    printf("The mem count is: %d \n", state->mem_count);
-    if (state->display_mode)
-    {
-        printf("%s", "The display mode is: on \n");
-    }
-    else
-    {
-        printf("%s", "The display mode is: off \n");
-    }
 }
 void print_state(STATE *state)
 {
@@ -116,19 +98,18 @@ void print_state(STATE *state)
     {
         printf("%s", "The debug mode is: OFF \n");
     }
-       if (state->display_mode)
+    if (state->display_mode)
     {
-        printf("%s", "The display mode is: ON \n");
+        printf("%s", "The display mode is: HEXADECIMAL \n");
     }
     else
     {
-        printf("%s", "The display mode is: OFF \n");
+        printf("%s", "The display mode is: DECIMAL \n");
     }
     printf("The file name is: %s \n", state->file_name);
     printf("The unit size is: %d \n", state->unit_size);
     printf("The mem count is: %d \n", state->mem_count);
-    fprintf(stdout,"%s %p","The membuf location:\n",state->mem_buf);
- 
+    fprintf(stdout, "%s %p", "The membuf location:\n", state->mem_buf);
 }
 void set_file_name(STATE *state)
 {
@@ -156,7 +137,6 @@ void set_unit_size(STATE *state)
     {
         fprintf(stdout, "%s", "Invalid unit size!");
     }
-    printf("%s", "\n");
 }
 void load_into_memory(STATE *state)
 {
@@ -177,8 +157,6 @@ void load_into_memory(STATE *state)
     printf("\nEnter location: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
     sscanf(input_tmp, "%X", &location);
-    debug_print_hexa(state->debug_mode, "\nDebug: The location is: ", location);
-
     printf("Enter length: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
     sscanf(input_tmp, "%d", &length);
@@ -188,7 +166,7 @@ void load_into_memory(STATE *state)
     debug_print_hexa(state->debug_mode, "\nDebug: The location is: ", location);
     fseek(file, location, SEEK_SET);
     fread(state->mem_buf, state->unit_size, length, file);
-    printf("--------Loaded %d units in to memory--------\n", length);
+    printf("\n--------Loaded %d units in to memory--------\n", length);
 
     state->mem_count = state->unit_size * length;
     fclose(file);
@@ -218,13 +196,17 @@ void memory_display(STATE *state)
     printf("Enter address: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
     sscanf(input_tmp, "%X", &addr);
-    if(state->display_mode){
-        printf("%s","\n------ PRINTING MEMORY WITH HEXADECIMAL REPRESENTATION ------\n");
-    } else {
-        printf("%s","\n-------- PRINTING MEMORY WITH DECIMAL REPRESENTATION --------\n");
+    if (state->display_mode)
+    {
+        printf("%s", "------ PRINTING MEMORY WITH HEXADECIMAL REPRESENTATION ------\n");
     }
-    if(addr!=0) {
-        buffer = (unsigned char*)addr;
+    else
+    {
+        printf("%s", "-------- PRINTING MEMORY WITH DECIMAL REPRESENTATION --------\n");
+    }
+    if (addr != 0)
+    {
+        buffer = (unsigned char *)addr;
     }
     unsigned char *end = buffer + state->unit_size * u;
     while (buffer < end)
@@ -233,52 +215,89 @@ void memory_display(STATE *state)
         if (state->unit_size == 1)
         {
             unsigned char var = *((unsigned char *)(buffer));
-            fprintf(stdout, format(state), var);
+            fprintf(stdout, format_from_state(state), var);
             printf("%s", "\n");
             buffer += state->unit_size;
         }
         else if (state->unit_size == 2)
         {
-            short var = *((short *)(buffer));
-            fprintf(stdout, format(state), htons(var));
+            unsigned short var = *((unsigned short *)(buffer));
+            fprintf(stdout, format_from_state(state),htons(var));
             printf("%s", "\n");
             buffer += state->unit_size;
         }
         else
         {
-            int var = *((int *)(buffer));
-            fprintf(stdout, format(state),htonl(var));
+            unsigned int var = *((unsigned int *)(buffer));
+            fprintf(stdout, format_from_state(state), htonl(var));
             printf("%s", "\n");
             buffer += state->unit_size;
         }
     }
 }
-void save_into_file(STATE *state){
-    int source_addr,target_loc,length;
+void save_into_file(STATE *state)
+{
+    int source_addr, target_loc, length;
     char input_tmp[INPUT_MAX_SIZE];
     printf("Enter source address: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
-    sscanf(input_tmp,"%X",&source_addr);
+    sscanf(input_tmp, "%X", &source_addr);
     printf("Enter target location: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
-    sscanf(input_tmp,"%X",&target_loc);
+    sscanf(input_tmp, "%X", &target_loc);
     printf("Enter length: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
-    sscanf(input_tmp,"%d",&length);
+    sscanf(input_tmp, "%d", &length);
 
-    if(target_loc>=sizeof_file(state->file_name)){
-        fprintf(stdout,"%s %d","The size is: ",sizeof_file(state->file_name));
-        printf("%s","Error: target location is greater than the file's size\n");
-         return;
+    if (target_loc >= sizeof_file(state->file_name))
+    {
+        printf("%s", "Error: target location is greater than the file's size\n");
+        return;
     }
     unsigned char *buffer = (unsigned char *)state->mem_buf;
-    if(source_addr!=0) {
-        buffer = (unsigned char *)source_addr;      
+    if (source_addr != 0)
+    {
+        buffer = (unsigned char *)source_addr;
     }
-    FILE* file = fopen(state->file_name,"r+");
-    fseek(file,target_loc,SEEK_SET);
-    fwrite(buffer,state->unit_size,length,file);
+    FILE *file = fopen(state->file_name, "r+");
+    fseek(file, target_loc, SEEK_SET);
+    fwrite(buffer, state->unit_size, length, file);
     fclose(file);
+}
+void modify_memory(STATE *state)
+{
+    int location, value;
+    char input_tmp[INPUT_MAX_SIZE];
+    printf("Enter location: ");
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp, "%X", &location);
+    printf("Enter value: ");
+    fgets(input_tmp, INPUT_MAX_SIZE, stdin);
+    sscanf(input_tmp, "%X", &value);
+    debug_print_hexa(state->debug_mode, "\nDebug: the location is: ", location);
+    debug_print_hexa(state->debug_mode, "\nDebug: the value is: ", value);
+    if (location + state->unit_size > strlen((char*)state->mem_buf))
+    {
+        fprintf(stdout, "%s", "not enough space in membuf");
+        return;
+    }
+    else if ((state->unit_size == 1 && value > UCHAR_MAX) || (state->unit_size == 2 && value > USHRT_MAX) || (state->unit_size == 3 && value > UINT32_MAX))
+    {
+        fprintf(stdout,"%s","incompatible value");
+        return;
+    }
+    if (state->unit_size == 1)
+    {
+        *((unsigned char *)(state->mem_buf + location)) = (unsigned char)value;
+    }
+    else if (state->unit_size == 2)
+    {
+        *((unsigned short *)(state->mem_buf + location)) = htons((unsigned short)value);
+    }
+    else
+    {
+        *((unsigned int *)(state->mem_buf + location)) = htonl((unsigned int)value);
+    }
 }
 void quit(STATE *state)
 {
@@ -294,15 +313,16 @@ int main(int argc, char **argv)
     int parsed_input = 0;
     char strInput[INPUT_MAX_SIZE];
     char strinputTmp[INPUT_MAX_SIZE];
-    FUNC_DESC menu[] = {{"toggle debug mode", &toggle_debug_mode},
-                        {"print state info", &print_state},
-                        {"set file name", &set_file_name},
-                        {"set unit size", &set_unit_size},
-                        {"load into memory", &load_into_memory},
-                        {"toggle display mode", &toggle_display_mode},
-                        {"memory display", &memory_display},
-                        {"save into file", &save_into_file},
-                        {"quit", &quit},
+    FUNC_DESC menu[] = {{"Toggle debug mode", &toggle_debug_mode},
+                        {"Print state info", &print_state},
+                        {"Set file name", &set_file_name},
+                        {"Set unit size", &set_unit_size},
+                        {"Load into memory", &load_into_memory},
+                        {"Toggle display mode", &toggle_display_mode},
+                        {"Memory display", &memory_display},
+                        {"Save into file", &save_into_file},
+                        {"Modify memory", &modify_memory},
+                        {"Quit", &quit},
                         {NULL, NULL}};
     int bounds = calculate_menu_bounds(menu);
 
