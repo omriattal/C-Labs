@@ -222,14 +222,14 @@ void memory_display(STATE *state)
         else if (state->unit_size == 2)
         {
             unsigned short var = *((unsigned short *)(buffer));
-            fprintf(stdout, format_from_state(state),htons(var));
+            fprintf(stdout, format_from_state(state),var);
             printf("%s", "\n");
             buffer += state->unit_size;
         }
         else
         {
             unsigned int var = *((unsigned int *)(buffer));
-            fprintf(stdout, format_from_state(state), htonl(var));
+            fprintf(stdout, format_from_state(state), var);
             printf("%s", "\n");
             buffer += state->unit_size;
         }
@@ -239,7 +239,7 @@ void save_into_file(STATE *state)
 {
     int source_addr, target_loc, length;
     char input_tmp[INPUT_MAX_SIZE];
-    printf("Enter source address: ");
+    printf("\nEnter source address: ");
     fgets(input_tmp, INPUT_MAX_SIZE, stdin);
     sscanf(input_tmp, "%X", &source_addr);
     printf("Enter target location: ");
@@ -278,12 +278,14 @@ void modify_memory(STATE *state)
     debug_print_hexa(state->debug_mode, "\nDebug: the value is: ", value);
     if (location + state->unit_size > strlen((char*)state->mem_buf))
     {
-        fprintf(stdout, "%s", "not enough space in membuf");
+        printf("%s", "Error: not enough space in membuf!\n");
         return;
     }
-    else if ((state->unit_size == 1 && value > UCHAR_MAX) || (state->unit_size == 2 && value > USHRT_MAX) || (state->unit_size == 3 && value > UINT32_MAX))
+    else if ((state->unit_size == 1 && value > UCHAR_MAX)
+             || (state->unit_size == 2 && value > USHRT_MAX)
+             || (state->unit_size == 4 && value > UINT32_MAX))
     {
-        fprintf(stdout,"%s","incompatible value");
+        printf("%s","Error: incompatible value!\n");
         return;
     }
     if (state->unit_size == 1)
@@ -292,11 +294,11 @@ void modify_memory(STATE *state)
     }
     else if (state->unit_size == 2)
     {
-        *((unsigned short *)(state->mem_buf + location)) = htons((unsigned short)value);
+        *((unsigned short *)(state->mem_buf + location)) = (unsigned short)value;
     }
     else
     {
-        *((unsigned int *)(state->mem_buf + location)) = htonl((unsigned int)value);
+        *((unsigned int *)(state->mem_buf + location)) = (unsigned int)value;
     }
 }
 void quit(STATE *state)
@@ -309,7 +311,6 @@ int main(int argc, char **argv)
 {
     STATE *state = (STATE *)(malloc(sizeof(STATE)));
     init_state(state);
-
     int parsed_input = 0;
     char strInput[INPUT_MAX_SIZE];
     char strinputTmp[INPUT_MAX_SIZE];

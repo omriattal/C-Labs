@@ -1,4 +1,7 @@
 .vscode/launch.json
-lab7/task1/.idea
-lab7/task1/cmake-build-debug
-lab7/task1/CMakeLists.txt
+
+lab7/hexeditplus/abc
+lab7/hexeditplus/chezi
+lab7/hexeditplus/digitcount
+lab7/hexeditplus/digit_counter_files
+lab7/hexeditplus/ntsc
