@@ -11,5 +11,5 @@ I used makefiles to compile the code and used Visual Studio Code as the developm
 #### [LAB4 - System Calls](https://www.cs.bgu.ac.il/~caspl202/Lab4/Tasks)
 #### [LAB5 - Command Interpreter (Shell)](https://www.cs.bgu.ac.il/~caspl202/Lab5/Tasks)
 #### [LAB6 - Shell: I/O Redirection and Pipes](https://www.cs.bgu.ac.il/~caspl202/Lab6/Tasks)
-
+#### [LAB7 - ELF - Introduction](https://www.cs.bgu.ac.il/~caspl202/Lab7/Tasks)
 
