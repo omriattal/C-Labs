@@ -276,8 +276,8 @@ void modify_memory(STATE *state)
     sscanf(input_tmp, "%X", &value);
     debug_print_hexa(state->debug_mode, "\nDebug: the location is: ", location);
     debug_print_hexa(state->debug_mode, "\nDebug: the value is: ", value);
-    if (location + state->unit_size > strlen((char*)state->mem_buf))
-    {
+    if (location > state->mem_count)
+    { 
         printf("%s", "Error: not enough space in membuf!\n");
         return;
     }
@@ -288,18 +288,8 @@ void modify_memory(STATE *state)
         printf("%s","Error: incompatible value!\n");
         return;
     }
-    if (state->unit_size == 1)
-    {
-        *((unsigned char *)(state->mem_buf + location)) = (unsigned char)value;
-    }
-    else if (state->unit_size == 2)
-    {
-        *((unsigned short *)(state->mem_buf + location)) = (unsigned short)value;
-    }
-    else
-    {
-        *((unsigned int *)(state->mem_buf + location)) = (unsigned int)value;
-    }
+
+    memmove(state->mem_buf+location,&value,state->unit_size);
 }
 void quit(STATE *state)
 {
