@@ -72,7 +72,7 @@ void print_data_scheme(Elf32_Ehdr *elf_header) {
    }
 }
 void print_shdr_offset(Elf32_Ehdr *elf_header){
-    printf("%s %d ","\n\nSection header table offset: ",elf_header->e_shoff);
+    printf("%s %d ","\nSection header table offset: ",elf_header->e_shoff);
 }
 void print_shdr_num(Elf32_Ehdr *elf_header){
     printf("%s %d ","\nNumber of section headers: ",elf_header->e_shnum);
@@ -141,8 +141,14 @@ char* get_type_name(int type){
         case SHT_LOOS:
             return "LOOS"; 
         default:
-            return NULL; 
+            return "NULL"; 
     }
+}
+char* get_name(Elf32_Ehdr *elf_header,int offset_str){
+    void *begin_file = (void *)elf_header;
+    Elf32_Shdr *strtab_entry = (Elf32_Shdr *)(begin_file+elf_header->e_shoff+elf_header->e_shentsize*elf_header->e_shstrndx);
+    int offset_strtab = strtab_entry->sh_offset;
+    return (char *)(begin_file+offset_strtab+offset_str);
 }     
 //MENU FUNCTIONS
 void toggle_debug_mode(STATE *state)
@@ -201,10 +207,26 @@ void examine_elf_file(STATE *state)
     print_elf_info(state->header);
     
 }
-
+void print_section_name(STATE *state){
+    if(state->currentfd==-1) {
+        fprintf(stderr,"%s","\ninvalid file");
+        return;
+    }
+    Elf32_Ehdr* elf_header = state->header;
+    printf("%s","\nSection headers sizes:\n");
+    void *elf_begin = (void *)elf_header;
+    int shoff = elf_header->e_shoff;
+    int shdr_num = elf_header->e_shnum;
+    Elf32_Shdr* entry = (Elf32_Shdr *)(elf_begin+shoff);
+    printf("%s","INDEX\tNAME\t\tADDRESS\t\tOFFSET\tSIZE\tTYPE\n");
+    for(int i = 0 ;i<shdr_num;i++){
+        printf("[%d]\t%s\t\t%08X\t%06X\t%06X\t%s \n",i,get_name(elf_header,entry->sh_name),entry->sh_addr,entry->sh_offset,entry->sh_size,get_type_name(entry->sh_type));
+        shoff+=elf_header->e_shentsize;
+        entry = (Elf32_Shdr *)(elf_begin+shoff); 
+    }  
+}
 void quit(STATE *state)
 {
-
     close_file(state);
     unmap(state);
     free(state);
@@ -219,6 +241,7 @@ int main(int argc, char *argv[])
     char strinputTmp[INPUT_MAX_SIZE];
     FUNC_DESC menu[] = {{"Toggle Debug Mode", &toggle_debug_mode},
                         {"Examine ELF File", &examine_elf_file},
+                         {"Print Section Names", &print_section_name},
                         {"Quit", &quit},
                         {NULL, NULL}};
 
