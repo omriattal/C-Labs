@@ -191,8 +191,7 @@ char *get_sh_name_from_index(Elf32_Ehdr *elf_header, int index) {
     char *sh_name = get_sh_name_from_offset(elf_header,sh_entry->sh_name);
     return sh_name;
 }
-
-int get_symtab_index(Elf32_Ehdr *elf_header){
+int get_sh_entry_index_from_type(Elf32_Ehdr *elf_header,int type){
     void *elf_begin = (void *)elf_header;
     int shoff = elf_header->e_shoff;
     int shdr_num = elf_header->e_shnum;
@@ -200,7 +199,7 @@ int get_symtab_index(Elf32_Ehdr *elf_header){
     Elf32_Shdr *entry = (Elf32_Shdr *)(elf_begin + shoff);
     for (int i = 0; i < shdr_num; i++)
     {
-       if(entry->sh_type==SHT_SYMTAB){
+       if(entry->sh_type==type){
            symtab_index=i;
            break;
        }
@@ -209,6 +208,26 @@ int get_symtab_index(Elf32_Ehdr *elf_header){
     }
     return symtab_index;
 }
+int get_sh_entry_index_from_name(Elf32_Ehdr *elf_header,char *sh_name){
+    int shdr_num = elf_header->e_shnum;
+    int symtab_index = -1;
+    for (int i = 0; i < shdr_num; i++)
+    {
+       if(strcmp(get_sh_name_from_index(elf_header,i),sh_name)==0){
+           symtab_index=i;
+           break;
+       }
+    }
+    return symtab_index;
+}
+char *get_symbol_name(Elf32_Ehdr* elf_header, int str_offset){
+    void *begin_file = (void *)elf_header;
+    int strtab_index = get_sh_entry_index_from_name(elf_header,".strtab");
+    Elf32_Shdr *strtab_entry = (Elf32_Shdr *)(begin_file + elf_header->e_shoff + elf_header->e_shentsize * strtab_index);
+    int offset_strtab = strtab_entry->sh_offset;
+    return (char *)(begin_file + offset_strtab + str_offset);
+}
+
 //MENU FUNCTIONS
 void toggle_debug_mode(STATE *state)
 {
@@ -295,7 +314,7 @@ void print_symbols(STATE *state)
     }
 
     Elf32_Ehdr *elf_header = state->header;
-    int symtab_index = get_symtab_index(elf_header);
+    int symtab_index = get_sh_entry_index_from_type(elf_header,SHT_SYMTAB);
     void *begin_file = (void *)elf_header;
     Elf32_Shdr *symtab_shdr_entry = (Elf32_Shdr *)(begin_file + elf_header->e_shoff + elf_header->e_shentsize * symtab_index);
     int symtab_size = symtab_shdr_entry->sh_size;
@@ -306,7 +325,7 @@ void print_symbols(STATE *state)
     printf("INDEX\tVALUE\tSECTION_INDEX\tSECTION NAME\tSYMBOL NAME\n");
     while(size_acc < symtab_size){
         char *sh_name = get_sh_name_from_index(elf_header,symtab_entry->st_shndx);
-        printf("%d\t%08X\t%d\t%s\t\t%s\n",index,symtab_entry->st_value,symtab_entry->st_shndx,sh_name,"NAME");
+        printf("%d\t%08X\t%d\t%s\t\t%s\n",index,symtab_entry->st_value,symtab_entry->st_shndx,sh_name,get_symbol_name(elf_header,symtab_entry->st_name));
         size_acc+=sizeof(Elf32_Sym);
         symtab_entry=(Elf32_Sym *)(begin_file+symtab_offset + size_acc);
         index++;
