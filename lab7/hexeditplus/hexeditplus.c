@@ -3,8 +3,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <inttypes.h>
-#include <arpa/inet.h>
 #include <limits.h>
 
 #define INPUT_MAX_SIZE 1024
