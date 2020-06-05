@@ -225,6 +225,7 @@ void print_section_name(STATE *state){
         entry = (Elf32_Shdr *)(elf_begin+shoff); 
     }  
 }
+
 void quit(STATE *state)
 {
     close_file(state);
