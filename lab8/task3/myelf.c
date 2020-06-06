@@ -156,22 +156,24 @@ char *get_type_name(int type)
         return "NULL";
     }
 }
-char *get_special_sh_name(int index){
-    switch(index){
-        case SHN_LORESERVE:
-            return "LORESERVE/LOPROC";
-        case SHN_HIPROC:
-            return "HIPOC";
-        case SHN_ABS:
-            return "ABS";
-        case SHN_COMMON:
-            return "COMMON";
-        case SHN_HIRESERVE:
-            return "HIRESERVE";
-        case SHN_UNDEF:
-            return "UNDEF";
-        default:
-            return NULL;
+char *get_special_sh_name(int index)
+{
+    switch (index)
+    {
+    case SHN_LORESERVE:
+        return "LORESERVE/LOPROC";
+    case SHN_HIPROC:
+        return "HIPOC";
+    case SHN_ABS:
+        return "ABS";
+    case SHN_COMMON:
+        return "COMMON";
+    case SHN_HIRESERVE:
+        return "HIRESERVE";
+    case SHN_UNDEF:
+        return "UNDEF";
+    default:
+        return NULL;
     }
 }
 char *get_sh_name_from_offset(Elf32_Ehdr *elf_header, int offset_str)
@@ -181,17 +183,20 @@ char *get_sh_name_from_offset(Elf32_Ehdr *elf_header, int offset_str)
     int offset_strtab = strtab_entry->sh_offset;
     return (char *)(begin_file + offset_strtab + offset_str);
 }
-char *get_sh_name_from_index(Elf32_Ehdr *elf_header, int index) {
+char *get_sh_name_from_index(Elf32_Ehdr *elf_header, int index)
+{
     char *special_name = get_special_sh_name(index);
-    if(special_name!=NULL) {
+    if (special_name != NULL)
+    {
         return special_name;
     }
     void *begin_file = (void *)elf_header;
     Elf32_Shdr *sh_entry = (Elf32_Shdr *)(begin_file + elf_header->e_shoff + elf_header->e_shentsize * index);
-    char *sh_name = get_sh_name_from_offset(elf_header,sh_entry->sh_name);
+    char *sh_name = get_sh_name_from_offset(elf_header, sh_entry->sh_name);
     return sh_name;
 }
-int get_sh_entry_index_from_type(Elf32_Ehdr *elf_header,int type){
+int get_sh_entry_index_from_type(Elf32_Ehdr *elf_header, int type)
+{
     void *elf_begin = (void *)elf_header;
     int shoff = elf_header->e_shoff;
     int shdr_num = elf_header->e_shnum;
@@ -199,48 +204,63 @@ int get_sh_entry_index_from_type(Elf32_Ehdr *elf_header,int type){
     Elf32_Shdr *entry = (Elf32_Shdr *)(elf_begin + shoff);
     for (int i = 0; i < shdr_num; i++)
     {
-       if(entry->sh_type==type){
-           symtab_index=i;
-           break;
-       }
+        if (entry->sh_type == type)
+        {
+            symtab_index = i;
+            break;
+        }
         shoff += elf_header->e_shentsize;
         entry = (Elf32_Shdr *)(elf_begin + shoff);
     }
     return symtab_index;
 }
-int get_sh_entry_index_from_name(Elf32_Ehdr *elf_header,char *sh_name){
+int get_sh_entry_index_from_name(Elf32_Ehdr *elf_header, char *sh_name)
+{
     int shdr_num = elf_header->e_shnum;
     int symtab_index = -1;
     for (int i = 0; i < shdr_num; i++)
     {
-       if(strcmp(get_sh_name_from_index(elf_header,i),sh_name)==0){
-           symtab_index=i;
-           break;
-       }
+        if (strcmp(get_sh_name_from_index(elf_header, i), sh_name) == 0)
+        {
+            symtab_index = i;
+            break;
+        }
     }
     return symtab_index;
 }
-char *get_symbol_name(Elf32_Ehdr *elf_header, int str_offset){
+char *get_symbol_name(Elf32_Ehdr *elf_header,char *strtab_name, int str_offset)
+{
     void *begin_file = (void *)elf_header;
-    int strtab_index = get_sh_entry_index_from_name(elf_header,".strtab");
+    int strtab_index = get_sh_entry_index_from_name(elf_header,strtab_name);
     Elf32_Shdr *strtab_entry = (Elf32_Shdr *)(begin_file + elf_header->e_shoff + elf_header->e_shentsize * strtab_index);
     int offset_strtab = strtab_entry->sh_offset;
     return (char *)(begin_file + offset_strtab + str_offset);
 }
-void print_relocation_table(Elf32_Ehdr *elf_header, int rel_index) {
+int get_symbol_value(Elf32_Ehdr *elf_header,int symbol_index){
+    int dynsym_index = get_sh_entry_index_from_name(elf_header,".dynsym");
+    void *begin_file = (void *)elf_header;
+    Elf32_Shdr *dynsym_shdr_entry = (Elf32_Shdr *)(begin_file + elf_header->e_shoff + elf_header->e_shentsize * dynsym_index);
+    int dynsym_offset = dynsym_shdr_entry->sh_offset;
+    Elf32_Sym *dynsym_entry = (Elf32_Sym *)(begin_file + dynsym_offset + symbol_index*sizeof(Elf32_Sym));
+    return dynsym_entry->st_value;  
+}
+void print_relocation_table(Elf32_Ehdr *elf_header, int rel_index)
+{
     void *elf_begin = (void *)elf_header;
-    Elf32_Shdr *rel_sh = (Elf32_Shdr *)(elf_begin+elf_header->e_shoff + elf_header->e_shentsize*rel_index);
+    Elf32_Shdr *rel_sh = (Elf32_Shdr *)(elf_begin + elf_header->e_shoff + elf_header->e_shentsize * rel_index);
     int reltab_size = rel_sh->sh_size;
     int size_acc = 0;
-    Elf32_Rel *rel_entry = (Elf32_Rel *)(elf_begin+rel_sh->sh_offset + size_acc);
-    printf("%s","\nOffset\t\tInfo\n");
-    while(size_acc<reltab_size){
-        printf("%08X\t%08X\n",rel_entry->r_offset,rel_entry->r_info);
-        size_acc+=sizeof(Elf32_Rel);
-        rel_entry = (Elf32_Rel *)(elf_begin+rel_sh->sh_offset + size_acc);
+    Elf32_Rel *rel_entry = (Elf32_Rel *)(elf_begin + rel_sh->sh_offset + size_acc);
+    printf("Relocation Section: %s at offset 0x%0X contains %d entries:\n", get_sh_name_from_index(elf_header, rel_index), rel_sh->sh_offset, rel_sh->sh_size / sizeof(Elf32_Rel));
+    printf("%s", "\nOFFSET\t\tINFO\t\tTYPE\tSYM_VALUE\tSYM_NAME\n");
+    while (size_acc < reltab_size)
+    {
+        int info = rel_entry->r_info;
+        printf("%08X\t%08X\t%d\t%08X\t%s\n", rel_entry->r_offset, info, ELF32_R_TYPE(info),get_symbol_value(elf_header,ELF32_R_SYM(info)),"NAME");
+        size_acc += sizeof(Elf32_Rel);
+        rel_entry = (Elf32_Rel *)(elf_begin + rel_sh->sh_offset + size_acc);
     }
     printf("\n");
-
 }
 //MENU FUNCTIONS
 void toggle_debug_mode(STATE *state)
@@ -328,39 +348,46 @@ void print_symbols(STATE *state)
     }
 
     Elf32_Ehdr *elf_header = state->header;
-    int symtab_index = get_sh_entry_index_from_type(elf_header,SHT_SYMTAB);
+    int symtab_index = get_sh_entry_index_from_type(elf_header, SHT_SYMTAB);
     void *begin_file = (void *)elf_header;
     Elf32_Shdr *symtab_shdr_entry = (Elf32_Shdr *)(begin_file + elf_header->e_shoff + elf_header->e_shentsize * symtab_index);
     int symtab_size = symtab_shdr_entry->sh_size;
     int symtab_offset = symtab_shdr_entry->sh_offset;
-    Elf32_Sym *symtab_entry = (Elf32_Sym *)(begin_file+symtab_offset);
+    Elf32_Sym *symtab_entry = (Elf32_Sym *)(begin_file + symtab_offset);
     int size_acc = 0;
     int index = 0;
     printf("INDEX\tVALUE\tSECTION_INDEX\tSECTION NAME\tSYMBOL NAME\n");
-    while(size_acc < symtab_size){
-        char *sh_name = get_sh_name_from_index(elf_header,symtab_entry->st_shndx);
-        printf("%d\t%08X\t%d\t%s\t\t%s\n",index,symtab_entry->st_value,symtab_entry->st_shndx,sh_name,get_symbol_name(elf_header,symtab_entry->st_name));
-        size_acc+=sizeof(Elf32_Sym);
-        symtab_entry=(Elf32_Sym *)(begin_file+symtab_offset + size_acc);
+    while (size_acc < symtab_size)
+    {
+        char *sh_name = get_sh_name_from_index(elf_header, symtab_entry->st_shndx);
+        printf("%d\t%08X\t%d\t%s\t\t%s\n", index, symtab_entry->st_value, symtab_entry->st_shndx, sh_name, get_symbol_name(elf_header,".strtab",symtab_entry->st_name));
+        size_acc += sizeof(Elf32_Sym);
+        symtab_entry = (Elf32_Sym *)(begin_file + symtab_offset + size_acc);
         index++;
     }
 }
-void relocation_tables(STATE *state) {
+void relocation_tables(STATE *state)
+{
+    if (state->currentfd == -1)
+    {
+        fprintf(stderr, "%s", "\ninvalid file");
+        return;
+    }
     Elf32_Ehdr *elf_header = state->header;
     void *elf_begin = (void *)elf_header;
     int shoff = elf_header->e_shoff;
     int shdr_num = elf_header->e_shnum;
     Elf32_Shdr *entry = (Elf32_Shdr *)(elf_begin + shoff);
-    
+
     for (int i = 0; i < shdr_num; i++)
     {
-       if(entry->sh_type==SHT_REL){
-          print_relocation_table(elf_header,i);
-       }
+        if (entry->sh_type == SHT_REL)
+        {
+            print_relocation_table(elf_header, i);
+        }
         shoff += elf_header->e_shentsize;
         entry = (Elf32_Shdr *)(elf_begin + shoff);
     }
-
 }
 void quit(STATE *state)
 {
@@ -400,7 +427,6 @@ int main(int argc, char *argv[])
         printf("%s", "\n");
     }
 }
-
 void init_state(STATE *state)
 {
     state->debug_mode = false;

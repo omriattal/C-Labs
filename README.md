@@ -2,7 +2,7 @@
 This repository includes all the systems programing Labs assignments, in Ben Gurion University, Israel.
 The course is part of computer science bachelor's degree mandatory courses.
 
-All of the labs are written entirely in C and rarely Assembly in Linux Ubunutu.
+All of the labs are written entirely in C and rarely in Assembly in Linux Ubunutu.
 I used makefiles to compile the code and used Visual Studio Code as the development enviroment.
 
 #### [LAB1 - Rudimentary C programming, make files](https://www.cs.bgu.ac.il/~caspl202/Lab1/Tasks)
