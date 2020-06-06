@@ -244,6 +244,15 @@ int get_symbol_value(Elf32_Ehdr *elf_header,int symbol_index){
     Elf32_Sym *dynsym_entry = (Elf32_Sym *)(begin_file + dynsym_offset + symbol_index*sizeof(Elf32_Sym));
     return dynsym_entry->st_value;  
 }
+int get_symbol_str_offset(Elf32_Ehdr *elf_header,int symbol_index){
+    int dynsym_index = get_sh_entry_index_from_name(elf_header,".dynsym");
+    void *begin_file = (void *)elf_header;
+    Elf32_Shdr *dynsym_shdr_entry = (Elf32_Shdr *)(begin_file + elf_header->e_shoff + elf_header->e_shentsize * dynsym_index);
+    int dynsym_offset = dynsym_shdr_entry->sh_offset;
+    Elf32_Sym *dynsym_entry = (Elf32_Sym *)(begin_file + dynsym_offset + symbol_index*sizeof(Elf32_Sym));
+    return dynsym_entry->st_name;  
+}
+
 void print_relocation_table(Elf32_Ehdr *elf_header, int rel_index)
 {
     void *elf_begin = (void *)elf_header;
@@ -256,7 +265,9 @@ void print_relocation_table(Elf32_Ehdr *elf_header, int rel_index)
     while (size_acc < reltab_size)
     {
         int info = rel_entry->r_info;
-        printf("%08X\t%08X\t%d\t%08X\t%s\n", rel_entry->r_offset, info, ELF32_R_TYPE(info),get_symbol_value(elf_header,ELF32_R_SYM(info)),"NAME");
+        printf("%08X\t%08X\t%d\t%08X\t%s\n", rel_entry->r_offset, info, ELF32_R_TYPE(info),
+            get_symbol_value(elf_header,ELF32_R_SYM(info)),
+                get_symbol_name(elf_header,".dynstr",get_symbol_str_offset(elf_header,ELF32_R_SYM(info))));
         size_acc += sizeof(Elf32_Rel);
         rel_entry = (Elf32_Rel *)(elf_begin + rel_sh->sh_offset + size_acc);
     }
