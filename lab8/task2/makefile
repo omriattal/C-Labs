@@ -1,11 +1,11 @@
-all: myelf
-myelf: myelf.o
-	gcc -g -m32 -Wall -o  myelf myelf.o 
+all: task2
+task2: task2.o
+	gcc -g -m32 -Wall -o  task2 task2.o 
 
-myelf.o: myelf.c
-	gcc -g -m32 -Wall -c -o myelf.o myelf.c 
+task2.o: task2.c
+	gcc -g -m32 -Wall -c -o task2.o task2.c 
 
 .PHONY: clean
 
 clean: 
-	rm -f *.o myelf
+	rm -f *.o task2
